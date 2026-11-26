@@ -444,6 +444,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
 .jgrp+.jgrp{border-top:1px solid var(--line)}
 .jrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:6px 16px 6px 38px;font-size:14px}
 .jrow b{font-variant-numeric:tabular-nums}
+.pm{font-weight:400;color:var(--muted);font-size:.85em;margin-left:4px;white-space:nowrap}
 .jrow.jhead{padding:10px 16px 6px 14px;background:color-mix(in srgb,var(--c) 7%,transparent)}
 .jrow.jhead .tag{justify-self:start;border-left:0;background:none;padding:0;font-size:14px}   /* the group bar is the colour marker: no second bar on the label */
 .jrow.jhead b{font-family:var(--display);font-weight:500;font-size:19px;letter-spacing:0}
@@ -544,7 +545,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
         <label><span data-i18n="from">From</span> <input class="tm" name="start" placeholder="--:--" inputmode="numeric" title="Type 930 or 9:30. ↑/↓ moves 5 minutes." data-i18n-title="fromTitle"><button type="button" class="nowlink" id="nowBtn" title="Set date to today and From to the current time" data-i18n="now" data-i18n-title="nowTitle">Now</button></label>
         <label><span data-i18n="until">Until</span> <input class="tm" name="end" placeholder="auto" inputmode="numeric" title="Optional. Empty = ends when the next entry starts." data-i18n-ph="auto" data-i18n-title="untilTitle"></label>
         <select class="tag" name="category" aria-label="Category"></select>
-        <input name="jira" placeholder="Jira ticket" size="11" aria-label="Jira" data-i18n-ph="jiraPh">
+        <input name="jira" placeholder="Ticket #" size="11" aria-label="Ticket #" data-i18n-ph="jiraPh">
         <span class="grow"></span>
         <button class="btn" type="submit" data-i18n="addEntry">Add entry</button>
       </div>
@@ -575,8 +576,8 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
         <div class="panel">
           <h3 data-i18n="settings">Settings</h3>
           <p class="hint" data-i18n="settingsHint">Used for budget math and open-ended entries.</p>
-          <label class="setting"><span data-i18n="hpm">Hours per man-month</span> <input type="number" id="hpm" min="1" step="1"></label>
-          <label class="setting"><span data-i18n="thr">Warn if under budget by (MM)</span> <input type="number" id="thr" min="0" step="0.01"></label>
+          <label class="setting"><span data-i18n="hpm">Hours per person-month</span> <input type="number" id="hpm" min="1" step="1"></label>
+          <label class="setting"><span data-i18n="thr">Warn if under budget by (PM)</span> <input type="number" id="thr" min="0" step="0.01"></label>
           <label class="setting"><span data-i18n="dayStart">Workday starts at</span> <input class="tm" id="dayStart" inputmode="numeric"></label>
           <label class="setting"><span data-i18n="dayEnd">Workday ends at</span> <input class="tm" id="dayEnd" inputmode="numeric"></label>
           <label class="setting"><span data-i18n="breakMin">Break (minutes)</span> <input type="number" id="breakMin" min="0" step="5"></label>
@@ -587,12 +588,11 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
 
   <section class="view" id="v-day" hidden>
     <h2 class="sec" data-i18n="dayTitle">Hours by day</h2>
-    <p class="lead" data-i18n="dayLead">Compare this with PG.</p>
+    <p class="lead" data-i18n="dayLead">Use this to reconcile with your timesheet.</p>
     <div id="pivot"></div>
-    <h2 class="sec" style="margin-top:32px" data-i18n="taskTitle">Hours by Jira ticket</h2>
-    <p class="lead" data-i18n="taskLead">Check these against the hours logged in Jira.</p>
+    <h2 class="sec" style="margin-top:32px" data-i18n="taskTitle">Hours by ticket</h2>
+    <p class="lead" data-i18n="taskLead">Check these against your ticket system.</p>
     <div id="jiraList"></div>
-    <div class="jql">assignee = currentUser() and parentEpic = (this month's epic) and type = Sub-task</div>
   </section>
 
   <section class="view" id="v-year" hidden>
@@ -778,7 +778,7 @@ const lang = () => (S && S.settings && S.settings.lang) === "ja" ? "ja" : "en";
 const I18N = {
  en: {
   langBtn: "日本語", langAria: "Switch to Japanese", prevMonth: "Previous month", nextMonth: "Next month",
-  tabLog: "Log", tabBudget: "Budget", tabDay: "By month", tabTask: "Jira", tabYear: "By year", searchPh: "Search  /", searchAria: "Search all months",
+  tabLog: "Log", tabBudget: "Budget", tabDay: "By month", tabTask: "Tickets", tabYear: "By year", searchPh: "Search  /", searchAria: "Search all months",
   searchTitle: (q, n, h, k) => `“${q}”: ${n} ${n === 1 ? "entry" : "entries"} · ${h}h${k ? ` · ${k} note${k > 1 ? "s" : ""}` : ""}`,
   searchNone: q => `Nothing found for “${q}”`, searchNotes: "Day notes", searchCount: (n, h) => `${n} · ${h}h`, searchLimit: n => `Showing the newest ${n}. Narrow the search to see more.`,
   prevYear: "Previous year", nextYear: "Next year",
@@ -788,13 +788,13 @@ const I18N = {
   taskPh: "What are you working on?", task: "Task", earlierTasks: "Earlier tasks",
   date: "Date", dateTitle: "Past months close after the 7th of the next month.", from: "From", fromTitle: "Type 930 or 9:30. ↑/↓ moves 5 minutes.",
   now: "Now", nowTitle: "Set date to today and From to the current time", until: "Until", auto: "auto", untilTitle: "Optional. Empty = ends when the next entry starts.",
-  category: "Category", jiraPh: "Jira ticket", addEntry: "Add entry", summary: "Summary",
+  category: "Category", jiraPh: "Ticket #", addEntry: "Add entry", summary: "Summary",
   budgetLead: "Categories used this month and their budgets.", allCats: "All categories",
   allCatsHint: "Master list. Renaming here updates every month. 休憩 is built in and always available.",
   newCat: "New category", newCatName: "New category name", add: "Add", settings: "Settings", settingsHint: "Used for budget math and open-ended entries.",
-  hpm: "Hours per man-month", thr: "Warn if under budget by (MM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Jira", reqJiraTitle: "Entries in this category need a Jira ticket",
-  dayTitle: "Hours by day", dayLead: "Compare this with PG.", taskTitle: "Hours by Jira ticket", taskLead: "Check these against the hours logged in Jira.",
-  jiraHint: "Check these against the hours logged in Jira.",
+  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
+  dayTitle: "Hours by day", dayLead: "Use this to reconcile with your timesheet.", taskTitle: "Hours by ticket", taskLead: "Check these against your ticket system.",
+  jiraHint: "Check these against your ticket system.",
   prevWeek: "Previous week", nextWeek: "Next week", today: "Today",
   hoursN: n => `${n} hours`, dayOffLower: "day off", nothingLogged: "nothing logged", dayOff: "Day off",
   leaveAria: d => `Add a day off (休み) to ${d}`, full: "Full day", am: "Morning", pm: "Afternoon",
@@ -815,12 +815,12 @@ const I18N = {
   aNeed: (h, l) => `<b>${h}h a day</b> finishes the remaining ${l}h`, aCant: (h, l) => `<b>${h}h a day</b> needed for the remaining ${l}h, but a day is ${fmt(dayH())}h`,
   aWillOver: h => `At this pace you’ll use <b>${h}h more</b> than planned`, aOverNow: h => `<b>${h}h over</b> already`, aDone: "Plan used up",
   aNone: h => `${h}h used. Add a plan to track it.`, aFuture: (h, n) => `<b>${h}h a day</b> across ${n} workdays`, aEnded: (u, b) => `${u}h of ${b}h used`,
-  sPace: mm => `Pace ${mm} MM`, sShort: mm => `${mm} short`, sOver: mm => `${mm} over`, sNeed: h => `${h}h/day needed`,
-  sEndedOk: "Ended on budget", sEndedShort: mm => `Ended ${mm} MM short`, sEndedOver: mm => `Ended ${mm} MM over`,
+  sPace: mm => `Pace ${mm} PM`, sShort: mm => `${mm} short`, sOver: mm => `${mm} over`, sNeed: h => `${h}h/day needed`,
+  sEndedOk: "Ended on budget", sEndedShort: mm => `Ended ${mm} PM short`, sEndedOver: mm => `Ended ${mm} PM over`,
   sSummary: (need, cap, n) => `Budget left ${need}h · Time left ${cap}h (${n} day${n === 1 ? "" : "s"})`,
-  oPace: mm => `At this pace: ${mm} MM by month end`, oOnTrack: "on track", oShort: (mm, h) => `${mm} MM (${h}h) short`, oOver: (mm, h) => `${mm} MM (${h}h) over`,
+  oPace: mm => `At this pace: ${mm} PM by month end`, oOnTrack: "on track", oShort: (mm, h) => `${mm} PM (${h}h) short`, oOver: (mm, h) => `${mm} PM (${h}h) over`,
   oNeed: (h, n) => `Needs ${h}h a day for the ${n} workday${n === 1 ? "" : "s"} left`, oTooMuch: "(more than a full day)",
-  oEndedOk: "Month ended on budget", oEndedShort: (mm, h) => `Month ended ${mm} MM (${h}h) short`, oEndedOver: (mm, h) => `Month ended ${mm} MM (${h}h) over`,
+  oEndedOk: "Month ended on budget", oEndedShort: (mm, h) => `Month ended ${mm} PM (${h}h) short`, oEndedOver: (mm, h) => `Month ended ${mm} PM (${h}h) over`,
   oSummary: (n, cap, need, too) => `${n} workday${n === 1 ? "" : "s"} left (${cap}h). Budgets still need ${need}h${too ? ", more than the time left." : "."}`,
   tlSoFar: h => `${h}h so far`, tlNow: t => `now ${t}`, tlRunning: (t, d) => `Running since ${t} · ${d}`, tlNoCat: "no category",
   tlGap: t => `Nothing logged since ${t}`, tlNone: "Nothing logged yet today", tlLeft: h => `${h}h left in the day`,
@@ -832,7 +832,7 @@ const I18N = {
   notesFor: d => `Notes for ${d}`, notesPh: "Anything worth remembering about this day…", saved: "Saved", hasNote: "Has a note",
   ofDay: "of an 8h day", ofDayN: h => `of ${/^(8|11|18)(\.|$)/.test(String(h)) ? "an" : "a"} ${h}h day`, overtime: h => `+${h}h overtime`, budgetsOf: m => `${m} budgets`, noBudgets: "No budgets set.", openBudget: "Budget ›", setBudgets: "Set them on the Budget tab", monthWorked: "Worked this month",
   noneWarn: h => `${h}h has no category`, noneWarnTitle: "Show the first day with uncategorised time",
-  miss: n => `${n} ${n > 1 ? "entries need" : "entry needs"} a Jira ticket.`,
+  miss: n => `${n} ${n > 1 ? "entries need" : "entry needs"} a ticket #.`,
   neg: n => `${n} ${n > 1 ? "entries end" : "entry ends"} before it starts.`,
   ovl: n => `${n} ${n > 1 ? "entries overlap" : "entry overlaps"} the next entry, so time is counted twice.`,
   gaps: n => n === 1 ? "No entries yet on" : `${n} days have no entries yet:`,
@@ -841,18 +841,18 @@ const I18N = {
   publicHoliday: n => `${n} (public holiday)`, nothingOn: d => `Nothing logged on ${d}`,
   typeBelow: "Type what you're working on below, set the time and press Add entry.", markDayOff: "Mark as a day off",
   noCatsYet: m => `${m} has no categories yet`, pickCats: "Pick this month's categories on the Budget tab first.", setUpCats: "Set up categories",
-  noCategory: "No category", brk: "Break", noNote: "No note", noJira: "No Jira", addNote: "Add a note", jiraNeeded: "Jira needed", jira: "Jira",
+  noCategory: "No category", brk: "Break", noNote: "No note", noJira: "No ticket #", addNote: "Add a note", jiraNeeded: "Ticket # needed", jira: "Ticket #",
   autoEndTitle: "Ends when the next entry starts. Click to set a fixed time.", start: "Start", end: "End", clearEnd: "Clear to end when the next entry starts",
   deleteEntry: "Delete entry", delQ: "Delete?", removeQ: "Remove?",
-  moveCat: c => `Move ${c} (drag, or ↑/↓)`, dragTitle: "Drag to reorder, or use ↑/↓", budAria: c => `Budget for ${c} in man-months`,
-  used: (h, mm, b) => `${h}h used (${mm} MM)${b ? ` of ${b}h` : ""}`, left: "left", over: "over", removeCat: c => `Remove ${c} from this month`,
+  moveCat: c => `Move ${c} (drag, or ↑/↓)`, dragTitle: "Drag to reorder, or use ↑/↓", budAria: c => `Budget for ${c} in person-months`,
+  used: (h, mm, b) => `${h}h used (${mm} PM)${b ? ` of ${b}h` : ""}`, left: "left", over: "over", removeCat: c => `Remove ${c} from this month`,
   noCatsUsed: m => `No categories were used in ${m}.`, closedChanges: (m, d) => `${m} is closed for changes (closed on ${d}).`,
   noCatsIn: m => `No categories in ${m} yet.`, copyFrom: m => `Copy categories and budgets from ${m}`, catToAdd: "Category to add", addToMonth: "Add to month",
   allIn: "All categories are in this month. Create a new one under All categories.", createUnder: "Create a category under All categories.",
   colorFor: c => `Color for ${c}`, catName: "Category name", entriesUsing: "Entries using this category", deleteX: c => `Delete ${c}`, noCatsAtAll: "No categories yet.",
-  noData: m => `No data for ${m}`, colDay: "Day", colNone: "None", colWork: "Work", colTotal: "Total", noNoteParen: "(no note)", noTicket: "No ticket", colTicket: "Ticket", colDays: "Days", colHours: "Hours", noJira: m => `No Jira tickets logged in ${m}.`,
+  noData: m => `No data for ${m}`, colDay: "Day", colNone: "None", colWork: "Work", colTotal: "Total", noNoteParen: "(no note)", noTicket: "No ticket", colTicket: "Ticket", colDays: "Days", colHours: "Hours", noJira: m => `No tickets logged in ${m}.`,
   friday: (d, ago) => `It's Friday: time to back up. ${d ? `Last backup: ${d} (${ago === 1 ? "yesterday" : ago + " days ago"}).` : "You haven't made a backup yet."}`,
-  backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in PG.`, pgDone: "Registered", pgRegister: "Register today's times in PG.", otBtn: "I'm doing overtime", otUndo: "Back to 退勤", pgOver: (d, t) => `${d} past 退勤 (${t}). Time to go home!`,
+  backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in your timesheet.`, pgDone: "Registered", pgRegister: "Register today's times in your timesheet.", otBtn: "I'm doing overtime", otUndo: "Back to 退勤", pgOver: (d, t) => `${d} past 退勤 (${t}). Time to go home!`,
   tUnreadable: "Saved data was unreadable. A copy was kept; restore a backup.",
   tMerged: (n, ms) => `Added ${n} month${n > 1 ? "s" : ""} from your workbooks: ${ms}`,
   tTimeFormat: "Use a time like 9:30, 930 or 9 (24-hour).", tTimeEmpty: "This time can't be empty.",
@@ -864,12 +864,12 @@ const I18N = {
   tAddedTo: (c, m) => `Added ${c} to ${m}`, tBuiltin: n => `${n} is built in and always available.`, tExists: n => `${n} already exists.`,
   tCreated: (n, m) => `Created ${n} and added it to ${m}`, tBuiltinName: n => `${n} is built in, so that name can't be used.`, tEmptyName: "Name can't be empty.",
   tRenamed: (a, b) => `Renamed ${a} to ${b} everywhere`, tInUse: (c, n) => `${c} is used by ${n} ${n > 1 ? "entries" : "entry"}, so it can't be deleted.`,
-  tHpm: "Hours per man-month must be more than 0.", tThr: "Threshold must be 0 or more.",
+  tHpm: "Hours per person-month must be more than 0.", tThr: "Threshold must be 0 or more.",
   tRestored: n => `Restored ${n} entries`, tRestoreFail: m => "Couldn't restore: " + m
  },
  ja: {
   langBtn: "English", langAria: "英語に切り替え", prevMonth: "前の月", nextMonth: "次の月",
-  tabLog: "記録", tabBudget: "予算", tabDay: "月別", tabTask: "Jira", tabYear: "年別", searchPh: "検索  /", searchAria: "全期間を検索",
+  tabLog: "記録", tabBudget: "予算", tabDay: "月別", tabTask: "チケット", tabYear: "年別", searchPh: "検索  /", searchAria: "全期間を検索",
   searchTitle: (q, n, h, k) => `「${q}」：${n}件 · ${h}h${k ? ` · メモ${k}件` : ""}`,
   searchNone: q => `「${q}」は見つかりませんでした`, searchNotes: "日のメモ", searchCount: (n, h) => `${n}件 · ${h}h`, searchLimit: n => `新しい順に${n}件を表示しています。検索語を絞ってください。`,
   prevYear: "前の年", nextYear: "次の年",
@@ -879,13 +879,13 @@ const I18N = {
   taskPh: "何をしていますか？", task: "タスク", earlierTasks: "過去のタスク",
   date: "日付", dateTitle: "過去の月は翌月7日を過ぎると締め切られます。", from: "開始", fromTitle: "930 や 9:30 と入力。↑/↓ で5分ずつ変更。",
   now: "今", nowTitle: "日付を今日、開始を現在時刻にする", until: "終了", auto: "自動", untilTitle: "任意。空欄なら次の記録の開始時刻で終了。",
-  category: "カテゴリ", jiraPh: "Jira チケット", addEntry: "追加", summary: "サマリー",
+  category: "カテゴリ", jiraPh: "チケット番号", addEntry: "追加", summary: "サマリー",
   budgetLead: "今月使うカテゴリと予算。", allCats: "すべてのカテゴリ",
   allCatsHint: "マスター一覧。ここで名前を変えると全ての月に反映されます。休憩は組み込みで常に使えます。",
   newCat: "新しいカテゴリ", newCatName: "新しいカテゴリ名", add: "追加", settings: "設定", settingsHint: "予算の計算と、終了時刻のない記録に使います。",
-  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "Jira", reqJiraTitle: "このカテゴリの記録には Jira チケットが必要です",
-  dayTitle: "日別の時間", dayLead: "PG と照合してください。", taskTitle: "Jira チケット別の時間", taskLead: "Jira に記録した時間と照合してください。",
-  jiraHint: "Jira に記録した時間と照合してください。",
+  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "チケット番号", reqJiraTitle: "このカテゴリの記録にはチケット番号が必要です",
+  dayTitle: "日別の時間", dayLead: "タイムシートとの照合にご利用ください。", taskTitle: "チケット別の時間", taskLead: "チケット管理システムと照合してください。",
+  jiraHint: "チケット管理システムと照合してください。",
   prevWeek: "前の週", nextWeek: "次の週", today: "今日",
   hoursN: n => `${n}時間`, dayOffLower: "休み", nothingLogged: "記録なし", dayOff: "休み",
   leaveAria: d => `${d}に休みを追加`, full: "全日", am: "午前", pm: "午後",
@@ -923,7 +923,7 @@ const I18N = {
   notesFor: d => `${d}のメモ`, notesPh: "この日のメモ…", saved: "保存しました", hasNote: "メモあり",
   ofDay: "8時間中", ofDayN: h => `${h}時間中`, overtime: h => `残業 +${h}h`, budgetsOf: m => `${m}の予算`, noBudgets: "予算が未設定です。", openBudget: "予算タブへ ›", setBudgets: "予算タブで設定", monthWorked: "今月の勤務",
   noneWarn: h => `カテゴリ未設定 ${h}h`, noneWarnTitle: "カテゴリ未設定の最初の日を表示",
-  miss: n => `Jira チケットが必要な記録が${n}件あります。`,
+  miss: n => `チケット番号が必要な記録が${n}件あります。`,
   neg: n => `開始より前に終わる記録が${n}件あります。`,
   ovl: n => `次の記録と重なっている記録が${n}件あります（時間が二重に数えられます）。`,
   gaps: n => n === 1 ? "記録のない日：" : `記録のない日が${n}日あります：`,
@@ -932,7 +932,7 @@ const I18N = {
   publicHoliday: n => `${n}（祝日）`, nothingOn: d => `${d}の記録はありません`,
   typeBelow: "下に作業内容と時間を入力して「追加」を押してください。", markDayOff: "休みにする",
   noCatsYet: m => `${m}のカテゴリが未設定です`, pickCats: "先に予算タブで今月のカテゴリを選んでください。", setUpCats: "カテゴリを設定",
-  noCategory: "カテゴリなし", brk: "休憩", noNote: "メモなし", noJira: "Jira なし", addNote: "メモを追加", jiraNeeded: "Jira が必要", jira: "Jira",
+  noCategory: "カテゴリなし", brk: "休憩", noNote: "メモなし", noJira: "番号なし", addNote: "メモを追加", jiraNeeded: "チケット番号が必要", jira: "チケット番号",
   autoEndTitle: "次の記録の開始時刻で終了します。クリックすると終了時刻を固定できます。", start: "開始", end: "終了", clearEnd: "空にすると次の記録の開始時刻で終了",
   deleteEntry: "記録を削除", delQ: "削除？", removeQ: "外す？",
   moveCat: c => `${c} を移動（ドラッグまたは ↑/↓）`, dragTitle: "ドラッグか ↑/↓ で並べ替え", budAria: c => `${c} の予算（人月）`,
@@ -941,9 +941,9 @@ const I18N = {
   noCatsIn: m => `${m}にはまだカテゴリがありません。`, copyFrom: m => `${m}からカテゴリと予算をコピー`, catToAdd: "追加するカテゴリ", addToMonth: "今月に追加",
   allIn: "すべてのカテゴリが今月に入っています。新しいカテゴリは「すべてのカテゴリ」で作成してください。", createUnder: "「すべてのカテゴリ」でカテゴリを作成してください。",
   colorFor: c => `${c} の色`, catName: "カテゴリ名", entriesUsing: "このカテゴリの記録数", deleteX: c => `${c} を削除`, noCatsAtAll: "カテゴリはまだありません。",
-  noData: m => `${m}のデータはありません`, colDay: "日", colNone: "未設定", colWork: "勤務", colTotal: "合計", noNoteParen: "（メモなし）", noTicket: "チケットなし", colTicket: "チケット", colDays: "日数", colHours: "時間", noJira: m => `${m}にJiraチケットの記録はありません。`,
+  noData: m => `${m}のデータはありません`, colDay: "日", colNone: "未設定", colWork: "勤務", colTotal: "合計", noNoteParen: "（メモなし）", noTicket: "チケットなし", colTicket: "チケット", colDays: "日数", colHours: "時間", noJira: m => `${m}にチケットの記録はありません。`,
   friday: (d, ago) => `金曜日です。バックアップしましょう。${d ? `前回：${d}（${ago === 1 ? "昨日" : ago + "日前"}）。` : "まだバックアップがありません。"}`,
-  backupNow: "今すぐバックアップ", notThisWeek: "今週はしない", pgRemind: t => `終業は${t}です。今日の時間を PG に登録しましょう。`, pgDone: "登録済み", pgRegister: "今日の時間を PG に登録しましょう。", otBtn: "残業します", otUndo: "退勤に戻す", pgOver: (d, t) => `退勤時刻（${t}）を${d}過ぎています。帰りましょう！`,
+  backupNow: "今すぐバックアップ", notThisWeek: "今週はしない", pgRemind: t => `終業は${t}です。今日の時間をタイムシートに登録しましょう。`, pgDone: "登録済み", pgRegister: "今日の時間をタイムシートに登録しましょう。", otBtn: "残業します", otUndo: "退勤に戻す", pgOver: (d, t) => `退勤時刻（${t}）を${d}過ぎています。帰りましょう！`,
   tUnreadable: "保存データを読み込めませんでした。コピーを残してあります。バックアップから復元してください。",
   tMerged: (n, ms) => `ワークブックから${n}か月分を追加しました：${ms}`,
   tTimeFormat: "9:30、930、9 のように24時間制で入力してください。", tTimeEmpty: "この時刻は空にできません。",
@@ -1381,7 +1381,7 @@ function renderLog(){
             : timeIn(e.end, `${k("end")} class="tm end" aria-label="${L("end")}" title="${L("clearEnd")}"`)}</div>
           <input class="task" ${k("task")} value="${esc(e.task)}" placeholder="${e.category===BREAK?L("brk"):L("addNote")}" aria-label="${L("task")}">
           ${catSelect(e.category, `${k("category")} aria-label="${L("category")}"`)}
-          <span class="jira-w"><input class="jira" ${k("jira")} value="${esc(e.jira)}" placeholder="${needsJira(e.category)?L("jiraNeeded"):L("jira")}" aria-label="Jira"></span>
+          <span class="jira-w"><input class="jira" ${k("jira")} value="${esc(e.jira)}" placeholder="${needsJira(e.category)?L("jiraNeeded"):L("jira")}" aria-label="Ticket #"></span>
           <span class="h">${fmt(e._hrs)}h</span>
           <span class="xw"><button class="x" data-del="${e.id}" data-key="${e.id}:del" aria-label="${L("deleteEntry")}">×</button></span>
         </div>`;}).join("")}</div></section>`;
@@ -1414,7 +1414,7 @@ function renderBudget(){
   const wd = monthWorkdays(M), phase = M < today().slice(0,7) ? "past" : M > today().slice(0,7) ? "future" : "now";
   const outlookLine = (usedH, budgetH, hpm, thr) => {
     const f = forecast(usedH, budgetH, phase === "future" ? 0 : wd.elapsed, phase === "past" ? 0 : wd.remaining);
-    const mm = h => fmt(r2(Math.abs(h) / hpm)), hh = h => fmt(Math.round(Math.abs(h) * 10) / 10);   // MM to 2 decimals, hours to 1
+    const mm = h => fmt(r2(Math.abs(h) / hpm)), hh = h => fmt(Math.round(Math.abs(h) * 10) / 10);   // PM to 2 decimals, hours to 1
     const parts = [], tip = [];
     if (phase === "past"){
       const d = usedH - budgetH, ok = Math.abs(d) / hpm <= thr;
@@ -1468,7 +1468,7 @@ function renderBudget(){
     }
     const tint = has && (() => { const v = verdictOf(hrs, budgetH).k; return v === "cant" || v === "over"; })();
     return `<div class="brow${tint ? " warnrow" : ""}" data-c="${esc(c)}">
-      <span class="namecell">${closed ? `<span class="gripspace"></span>` : `<button class="grip" data-grip="month" data-key="g:${esc(c)}" aria-label="${esc(L("moveCat", c))}" title="${L("dragTitle")}">⋮⋮</button>`}<span class="nc"><span class="tag" style="--c:${colorOf(c)}">${esc(c)}</span><label class="bud-in"><span>${L("planWord")}</span>${plan}<span>MM</span></label></span></span>
+      <span class="namecell">${closed ? `<span class="gripspace"></span>` : `<button class="grip" data-grip="month" data-key="g:${esc(c)}" aria-label="${esc(L("moveCat", c))}" title="${L("dragTitle")}">⋮⋮</button>`}<span class="nc"><span class="tag" style="--c:${colorOf(c)}">${esc(c)}</span><label class="bud-in"><span>${L("planWord")}</span>${plan}<span>PM</span></label></span></span>
       <div class="bmain">${main}</div>
       <span class="xw">${closed ? "" : `<button class="x" data-rm data-key="rm:${esc(c)}" aria-label="${esc(L("removeCat", c))}">×</button>`}</span>
     </div>`;
@@ -1504,6 +1504,7 @@ function renderBudget(){
 }
 
 /* by day */
+const pmOf = h => `<span class="pm">(${fmt(r2(h / (+S.settings.hpm || 160)))} PM)</span>`;   // hours as person-months
 function renderPivot(){
   const rows = monthRows();
   if (!rows.length){ $("#pivot").innerHTML = `<div class="empty"><b>${L("noData", monthName(M))}</b></div>`; return; }
@@ -1526,10 +1527,10 @@ function renderPivot(){
       if (isDayOff(d)) return `<tr class="restrow offrow${tc}" data-rest="${d}"><td>${lbl} <span class="restlbl">${esc(L("dayOff"))}</span></td>${cats.map(c => v(cell(d,c), c)).join("")}<td class="num">${fmt(work(d))}</td><td class="num">${fmt(cell(d,null))}</td></tr>`;
       if (restDays.includes(d)) return `<tr class="restrow${tc}" data-rest="${d}"><td>${lbl} <span class="restlbl">${esc(holidayName(d))}</span></td>${cats.map(() => `<td class="num">–</td>`).join("")}<td class="num">–</td><td class="num">–</td></tr>`;
       return `<tr class="${tc.trim()}"><td>${lbl}</td>${cats.map(c => v(cell(d,c), c)).join("")}<td class="num"><b>${fmt(work(d))}</b></td><td class="num">${fmt(cell(d,null))}</td></tr>`; }).join("")}</tbody>
-    <tfoot><tr><td>${L("colTotal")}</td>${cats.map(c => `<td class="num${nc(c)}">${fmt(cell(null,c))}</td>`).join("")}<td class="num">${fmt(work(null))}</td><td class="num">${fmt(cell(null,null))}</td></tr></tfoot></table></div>`;
+    <tfoot><tr><td>${L("colTotal")}</td>${cats.map(c => `<td class="num${nc(c)}">${fmt(cell(null,c))} ${pmOf(cell(null,c))}</td>`).join("")}<td class="num">${fmt(work(null))} ${pmOf(work(null))}</td><td class="num">${fmt(cell(null,null))} ${pmOf(cell(null,null))}</td></tr></tfoot></table></div>`;
 }
 
-/* by Jira ticket: for checking the hours against Jira. A task that is just a ticket ID counts as that ticket. */
+/* by ticket: for checking the hours against your ticket system. A task that is just a ticket ID counts as that ticket. */
 const ticketOf = e => e.jira || (/^[A-Z][A-Z0-9]*-\d+$/.test((e.task || "").trim()) ? e.task.trim() : "");
 function renderJira(){
   const rows = monthRows(), g = new Map(), none = new Map();   // category -> ticket -> entries
@@ -1546,16 +1547,16 @@ function renderJira(){
   const body = cats.map(c => {
     const m = g.get(c), miss = none.get(c) || [];
     const sum = r2(sumH([...m.values()].flat()) + sumH(miss)); total += sum;
-    return `<div class="jgrp" style="--c:${c ? colorOf(c) : "var(--bad)"}"><div class="jrow jhead">${tag(c)}<b>${fmt(sum)}</b></div>`
+    return `<div class="jgrp" style="--c:${c ? colorOf(c) : "var(--bad)"}"><div class="jrow jhead">${tag(c)}<b>${fmt(sum)} ${pmOf(sum)}</b></div>`
       + [...m].sort(byKey).map(([k, a]) => `<div class="jrow"><span>${esc(k)}</span><b>${fmt(sumH(a))}</b></div>`).join("")
       + (miss.length ? `<div class="jrow miss"><span>${L("noTicket")}</span><b>${fmt(sumH(miss))}</b></div>` : "") + `</div>`;
   }).join("");
-  $("#jiraList").innerHTML = `<div class="sheet jsheet">${body}<div class="jrow jtot"><span>${L("colTotal")}</span><b>${fmt(r2(total))}</b></div></div>`;
+  $("#jiraList").innerHTML = `<div class="sheet jsheet">${body}<div class="jrow jtot"><span>${L("colTotal")}</span><b>${fmt(r2(total))} ${pmOf(total)}</b></div></div>`;
 }
 
 /* render: deferred so focus can move first, then restored by data-key */
 let view = "log", pending = false;
-/* the last 10 minutes of a workday: remind to register the day's times in PG (until dismissed or the workday ends) */
+/* the last 10 minutes of a workday: remind to register the day's times in timesheet (until dismissed or the workday ends) */
 const STAMPS = (() => { let q = 11; const r = () => (q = (q * 9301 + 49297) % 233280) / 233280;
   return Array.from({length: 400}, () => ({x: +(3 + r() * 94).toFixed(1), y: +(3 + r() * 94).toFixed(1), a: Math.round(r() * 50 - 25), f: +(1.6 + r() * 1.6).toFixed(2)})); })();
 /* the background after 退勤: giant characters darken, then stamps pile up. 残業 replaces 退勤 once you say you're working late. */
@@ -1578,7 +1579,7 @@ function renderPgBar(){
   end = Math.min(end, 1439);
   const workday = !isRestDay(t) && (!isWeekend(t) || todays.length > 0), over = nm >= end, askPg = S.pgDone !== t;
   renderWall(workday && over, nm - end, S.otDay === t);
-  const show = workday && nm >= end - 10 && askPg;   // the banner is only the PG reminder
+  const show = workday && nm >= end - 10 && askPg;   // the banner is only the timesheet reminder
   bar.hidden = !show;
   if (!show) return;
   bar.innerHTML = `<span>${L(over ? "pgRegister" : "pgRemind", minToT(end))}</span><button class="btn quiet" data-pgdone>${L("pgDone")}</button>`;
@@ -1608,7 +1609,7 @@ function applyStatic(){
   $("#langBtn").lang = l === "en" ? "ja" : "en";
 }
 
-/* Search across all months: task, category, Jira and day notes. Newest first, grouped by month. */
+/* Search across all months: task, category, ticket and day notes. Newest first, grouped by month. */
 let prevView = "log";
 function renderSearch(){
   const raw = $("#search").value.trim(), q = raw.toLowerCase();
@@ -1842,7 +1843,7 @@ form.onsubmit = ev => {
   render(); toEnd(); toast(L("tAdded", e.start, e.task)); form.task.focus();
 };
 
-/* task autocomplete: earlier tasks, newest first; picking one fills its last category and Jira */
+/* task autocomplete: earlier tasks, newest first; picking one fills its last category and ticket */
 let acItems = [], acIdx = -1;
 const acList = $("#acList");
 function taskIndex(){
@@ -1866,7 +1867,7 @@ function acRender(){
   form.task.setAttribute("aria-expanded", String(!!acItems.length));
   if (acIdx >= 0) form.task.setAttribute("aria-activedescendant", "ac-" + acIdx); else form.task.removeAttribute("aria-activedescendant");
 }
-/* Fill category and Jira from the last use of a task typed in full, without picking from the list.
+/* Fill category and ticket from the last use of a task typed in full, without picking from the list.
    Only fills empty fields, and undoes its own fill if the text stops matching. */
 function acAutofill(){
   const typed = form.task.value.trim(), it = taskIndex().find(x => x.task === typed), sel = form.category;
@@ -1886,7 +1887,7 @@ function acUpdate(){
   acAutofill();
   const q = form.task.value.trim().toLowerCase();
   if (!q){ acClose(); return; }
-  // match the task first, then category or Jira (so typing 東大 or a ticket number finds tasks too)
+  // match the task first, then category or ticket (so typing 東大 or a ticket number finds tasks too)
   const idx = taskIndex(), inTask = it => it.task.toLowerCase().includes(q), inMeta = it => !inTask(it) && [it.category, it.jira].some(x => (x || "").toLowerCase().includes(q));
   const starts = idx.filter(it => it.task.toLowerCase().startsWith(q)), contains = idx.filter(it => inTask(it) && !it.task.toLowerCase().startsWith(q));
   acItems = [...starts, ...contains, ...idx.filter(inMeta)].slice(0, 8);
@@ -2100,7 +2101,7 @@ $("#fileIn").onchange = async ev => {
 };
 $("#exportCsv").onclick = () => {
   const q = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
-  const lines = [["Date","Start Time","Specified End Time","End Time","Task","Minutes","Hrs","Category","Jira"].join(",")];
+  const lines = [["Date","Start Time","Specified End Time","End Time","Task","Minutes","Hrs","Category","Ticket #"].join(",")];
   monthRows().forEach(e => lines.push([e.date, e.start, e.end, minToT(e._end), q(e.task), e._min, e._hrs, q(e.category), q(e.jira)].join(",")));
   download(`time_log_${M}.csv`, "\uFEFF" + lines.join("\r\n"), "text/csv");
 };
