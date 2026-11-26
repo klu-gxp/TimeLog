@@ -55,6 +55,7 @@ Press `/` to search every month.
 - **Wallpaper:** once past clock-out, giant 退勤 (CLOCK OUT in the English copy) appears behind the page and darkens over 90 minutes. One red stamp is added for every minute past clock-out, scaled to the window size.
 - **Overtime button:** "I'm doing overtime" (bottom right) switches the wallpaper and stamps to 残業 (OVERTIME), with the same look. Press it again to switch back. It resets at midnight.
 - Not shown on days off, holidays, or weekends with nothing logged.
+- **Break wallpaper:** while a Break entry is running right now (today, between its start and end, or open-ended), a calm, fixed-strength wallpaper of giant "BREAK" (休憩 in the Japanese UI) replaces the clock-out wallpaper, and the overtime button is hidden. It goes away when the break ends.
 
 ## Built-in categories and holidays
 

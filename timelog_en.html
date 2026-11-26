@@ -851,7 +851,7 @@ const I18N = {
   colorFor: c => `Color for ${c}`, catName: "Category name", entriesUsing: "Entries using this category", deleteX: c => `Delete ${c}`, noCatsAtAll: "No categories yet.",
   noData: m => `No data for ${m}`, colDay: "Day", colNone: "None", colWork: "Work", colTotal: "Total", noNoteParen: "(no note)", noTicket: "No ticket", colTicket: "Ticket", colDays: "Days", colHours: "Hours", noJira: m => `No tickets logged in ${m}.`,
   friday: (d, ago) => `It's Friday: time to back up. ${d ? `Last backup: ${d} (${ago === 1 ? "yesterday" : ago + " days ago"}).` : "You haven't made a backup yet."}`,
-  backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in your timesheet.`, pgDone: "Registered", pgRegister: "Register today's times in your timesheet.", otBtn: "I'm doing overtime", otUndo: "Back to clock-out", pgOver: (d, t) => `${d} past clock-out (${t}). Time to go home!`,
+  backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in your timesheet.`, pgDone: "Registered", pgRegister: "Register today's times in your timesheet.", breakWall: "BREAK", otBtn: "I'm doing overtime", otUndo: "Back to clock-out", pgOver: (d, t) => `${d} past clock-out (${t}). Time to go home!`,
   tUnreadable: "Saved data was unreadable. A copy was kept; restore a backup.",
   tMerged: (n, ms) => `Added ${n} month${n > 1 ? "s" : ""} from your workbooks: ${ms}`,
   tTimeFormat: "Use a time like 9:30, 930 or 9 (24-hour).", tTimeEmpty: "This time can't be empty.",
@@ -1466,6 +1466,11 @@ let view = "log", pending = false;
 const STAMPS = (() => { let q = 11; const r = () => (q = (q * 9301 + 49297) % 233280) / 233280;
   return Array.from({length: 400}, () => ({x: +(3 + r() * 94).toFixed(1), y: +(3 + r() * 94).toFixed(1), a: Math.round(r() * 50 - 25), f: +(1.6 + r() * 1.6).toFixed(2)})); })();
 /* the background after clock-out: giant characters darken, then stamps pile up. overtime replaces clock-out once you say you're working late. */
+function renderBreakWall(){
+  const w = $("#taikin"), parts = L("breakWall").split("|");
+  $("#otBtn").hidden = true; w.hidden = false;
+  w.innerHTML = `<div class="big" style="opacity:.12;font-size:${parts.length > 1 ? "min(34vw,62vh)" : "min(24vw,56vh)"}">${parts.map(x => `<span>${x}</span>`).join("")}</div>`;
+}
 function renderWall(on, mins, ot){
   const w = $("#taikin"), b = $("#otBtn");
   w.hidden = b.hidden = !on;
@@ -1484,7 +1489,8 @@ function renderPgBar(){
   if (todays.length && !todays.some(e => e.category === LEAVE)) end += Math.min(...todays.map(e => toMin(e.start))) - workStart();
   end = Math.min(end, 1439);
   const workday = !isRestDay(t) && (!isWeekend(t) || todays.length > 0), over = nm >= end, askPg = S.pgDone !== t;
-  renderWall(workday && over, nm - end, S.otDay === t);
+  if (dayRows(t).some(e => e._now && e.category === BREAK)) renderBreakWall();   // on a break right now: a calm wallpaper instead
+  else renderWall(workday && over, nm - end, S.otDay === t);
   const show = workday && nm >= end - 10 && askPg;   // the banner is only the timesheet reminder
   bar.hidden = !show;
   if (!show) return;
