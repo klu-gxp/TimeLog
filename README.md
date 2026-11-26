@@ -34,11 +34,12 @@ Everything is stored in your browser's local storage, so it stays on this device
 - **Settings:** hours per man-month, the warning threshold, workday start, workday end and break (minutes).
 - **Standard day:** end minus start minus break (8h with 10:00, 19:00 and a 60-minute break). It drives expected hours, overtime and leave sizes.
 - **Categories:** a master list plus which categories each month uses. Drag to reorder, rename everywhere, and delete categories that are not in use.
+- **Requires Jira ticket:** each category has a "Jira" checkbox. When it is on, entries in that category without a ticket are flagged in red in the Log tab, counted in the warning above the log, and listed under "No ticket" in the By month tab. New categories start with it off.
 - **Closed months** are read-only.
 
 ### By month
 - Hours per day by category, with today highlighted.
-- **Hours by Jira ticket:** grouped by category, one row per ticket with its hours. A red "No ticket" row flags maintenance entries missing a ticket. Use it to compare against Jira.
+- **Hours by Jira ticket:** grouped by category, one row per ticket with its hours. Each category that requires a Jira ticket gets a red "No ticket" row for entries missing one. Use it to compare against Jira.
 
 ### By year
 - Twelve small calendars shaded by hours worked, with days off, holidays and overtime marked.
@@ -57,7 +58,6 @@ Press `/` to search every month.
 ## Built-in categories and holidays
 
 - **Break** (休憩) and **Leave** (休み) are built in. They are always available and never budgeted.
-- **Maintenance** (保守) entries are expected to have a Jira ticket.
 - Japanese public holidays are built in. Holidays and weekends expect no hours, and work on them counts as overtime.
 - In `timelog_en.html` the built-ins use English names. Names are stored as plain text in your data, so a backup from the Japanese version will not match them as built-ins.
 
@@ -68,16 +68,17 @@ Both files start empty. Near the top of the script there is a `SEED` constant, a
 ```json
 {
   "entries": [
-    { "date": "2026-11-02", "start": "10:00", "end": "", "task": "Triage", "category": "Maintenance", "jira": "635" }
+    { "date": "2026-11-02", "start": "10:00", "end": "", "task": "Triage", "category": "Support", "jira": "635" }
   ],
-  "categories": ["Maintenance", "Project A"],
-  "monthCats": { "2026-11": ["Maintenance", "Project A"] },
+  "categories": ["Support", "Project A"],
+  "monthCats": { "2026-11": ["Support", "Project A"] },
   "budgets": { "2026-11": { "Project A": 0.5 } }
 }
 ```
 
 - `end` may be empty (open-ended). `jira` and `task` may be empty.
 - `budgets` are man-months per category.
+- Seeded categories start with "requires Jira ticket" off. Turn it on in the Budget tab.
 - Both files ship with an empty seed: `{"entries":[],"categories":[],"monthCats":{},"budgets":{}}`.
 
 ## Customising

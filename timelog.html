@@ -400,11 +400,12 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important}
 .panel{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px}
 .panel h3{margin:0 0 2px;font-size:14px;font-weight:700}
 .panel p.hint{margin:0 0 10px;color:var(--muted);font-size:13px}
-.mrow{display:grid;grid-template-columns:18px 24px minmax(0,1fr) 26px 26px;gap:6px;align-items:center;margin-bottom:4px}
+.mrow{display:grid;grid-template-columns:18px 24px minmax(0,1fr) auto 26px 26px;gap:6px;align-items:center;margin-bottom:4px}
 .mrow input[type=color]{width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer}
 .mrow input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 .mrow input[type=color]::-webkit-color-swatch{border:0;border-radius:2px}
 .mrow input[type=color]::-moz-color-swatch{border:0;border-radius:2px}
+.mrow .reqj{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap}
 .mrow .use{font-size:12px;color:var(--muted);text-align:right}
 .setting{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
 .setting input{width:72px;text-align:right}
@@ -591,7 +592,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
     <h2 class="sec" style="margin-top:32px" data-i18n="taskTitle">Hours by Jira ticket</h2>
     <p class="lead" data-i18n="taskLead">Check these against the hours logged in Jira.</p>
     <div id="jiraList"></div>
-    <div class="jql">assignee = currentUser() and parentEpic = (this month's 保守 epic) and type = Sub-task</div>
+    <div class="jql">assignee = currentUser() and parentEpic = (this month's epic) and type = Sub-task</div>
   </section>
 
   <section class="view" id="v-year" hidden>
@@ -616,7 +617,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
 "use strict";
 const KEY = "timekeep.v2", OLD_KEY = "timekeep.v1";
 const SEED = {"entries":[],"categories":[],"monthCats":{},"budgets":{}};
-const MAINT = "保守", OUT = "保守外", BREAK = "休憩", LEAVE = "休み";   // 休み: days off and half days off, counted in hours (was 有給 + a separate day-off flag)
+const BREAK = "休憩", LEAVE = "休み";   // 休み: days off and half days off, counted in hours (was 有給 + a separate day-off flag)
 const BUILTIN = [BREAK, LEAVE];                       // always available, never budgeted
 const isBuiltin = c => BUILTIN.includes(c);
 const isWork = e => !isBuiltin(e.category);           // breaks and paid leave aren't work
@@ -702,6 +703,7 @@ function sanitize(d){
   // 休憩 and 休み are built in: always available, never budgeted, so they aren't kept in any list
   const gone = c => isBuiltin(c) || c === "有給";
   s.master = s.master.filter(x => !gone(x.name));
+  s.master.forEach(x => { if (typeof x.jira !== "boolean") x.jira = false; });   // categories saved before the flag existed: off
   for (const m of Object.values(s.months || {})){ m.cats = (m.cats||[]).filter(c => !gone(c)); if (m.budgets){ BUILTIN.forEach(b => delete m.budgets[b]); delete m.budgets["有給"]; } }
   return s;
 }
@@ -749,7 +751,7 @@ function mergeSeed(){
     Object.assign(cfg.budgets, Object.assign({}, seed.months[m].budgets, cfg.budgets));
     added.push(m);
   }
-  seed.master.forEach(x => { if (seed.entries.some(e => e.category === x.name && added.includes(e.date.slice(0,7))) && !S.master.some(y => y.name === x.name)) S.master.push(x); });
+  seed.master.forEach(x => { if (seed.entries.some(e => e.category === x.name && added.includes(e.date.slice(0,7))) && !S.master.some(y => y.name === x.name)) S.master.push({ ...x, jira: false }); });
   S = sanitize(S); save();
   if (added.length) setTimeout(() => toast(L("tMerged", added.length, added.map(m => isJa() ? `${+m.slice(5)}月` : MONTHS[+m.slice(5)-1].slice(0,3)).join(isJa() ? "、" : ", "))), 0);
 }
@@ -767,6 +769,7 @@ const monthCfg = (m = M) => S.months[m] ||= { cats:[], budgets:{} };
 const BREAK_COLOR = "#8F8C9C", LEAVE_COLOR = "#A0694B";
 const colorOf = name => { if (!name) return "#9A98A6"; if (name === BREAK) return BREAK_COLOR; if (name === LEAVE) return LEAVE_COLOR; const c = S.master.find(x => x.name === name); return c ? c.color : "#9A98A6"; };
 /* The master list's order is the one order used everywhere; a month's list is shown in that order. */
+const needsJira = c => !!c && S.master.some(x => x.name === c && x.jira === true);
 const ordered = names => [...names].sort((a,b) => S.master.findIndex(x => x.name === a) - S.master.findIndex(x => x.name === b));
 const monthCats = (m = M) => ordered(monthCfg(m).cats);
 const usedIn = (name, m) => S.entries.filter(e => e.category === name && (!m || e.date.startsWith(m))).length;
@@ -789,9 +792,9 @@ const I18N = {
   budgetLead: "Categories used this month and their budgets.", allCats: "All categories",
   allCatsHint: "Master list. Renaming here updates every month. 休憩 is built in and always available.",
   newCat: "New category", newCatName: "New category name", add: "Add", settings: "Settings", settingsHint: "Used for budget math and open-ended entries.",
-  hpm: "Hours per man-month", thr: "Warn if under budget by (MM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.",
+  hpm: "Hours per man-month", thr: "Warn if under budget by (MM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Jira", reqJiraTitle: "Entries in this category need a Jira ticket",
   dayTitle: "Hours by day", dayLead: "Compare this with PG.", taskTitle: "Hours by Jira ticket", taskLead: "Check these against the hours logged in Jira.",
-  jiraTitle: "保守 by Jira ticket", jiraHint: "Check these against the hours logged in Jira.",
+  jiraHint: "Check these against the hours logged in Jira.",
   prevWeek: "Previous week", nextWeek: "Next week", today: "Today",
   hoursN: n => `${n} hours`, dayOffLower: "day off", nothingLogged: "nothing logged", dayOff: "Day off",
   leaveAria: d => `Add a day off (休み) to ${d}`, full: "Full day", am: "Morning", pm: "Afternoon",
@@ -829,7 +832,7 @@ const I18N = {
   notesFor: d => `Notes for ${d}`, notesPh: "Anything worth remembering about this day…", saved: "Saved", hasNote: "Has a note",
   ofDay: "of an 8h day", ofDayN: h => `of ${/^(8|11|18)(\.|$)/.test(String(h)) ? "an" : "a"} ${h}h day`, overtime: h => `+${h}h overtime`, budgetsOf: m => `${m} budgets`, noBudgets: "No budgets set.", openBudget: "Budget ›", setBudgets: "Set them on the Budget tab", monthWorked: "Worked this month",
   noneWarn: h => `${h}h has no category`, noneWarnTitle: "Show the first day with uncategorised time",
-  miss: n => `${n} ${n > 1 ? "保守 entries need" : "保守 entry needs"} a Jira ticket.`,
+  miss: n => `${n} ${n > 1 ? "entries need" : "entry needs"} a Jira ticket.`,
   neg: n => `${n} ${n > 1 ? "entries end" : "entry ends"} before it starts.`,
   ovl: n => `${n} ${n > 1 ? "entries overlap" : "entry overlaps"} the next entry, so time is counted twice.`,
   gaps: n => n === 1 ? "No entries yet on" : `${n} days have no entries yet:`,
@@ -847,7 +850,7 @@ const I18N = {
   noCatsIn: m => `No categories in ${m} yet.`, copyFrom: m => `Copy categories and budgets from ${m}`, catToAdd: "Category to add", addToMonth: "Add to month",
   allIn: "All categories are in this month. Create a new one under All categories.", createUnder: "Create a category under All categories.",
   colorFor: c => `Color for ${c}`, catName: "Category name", entriesUsing: "Entries using this category", deleteX: c => `Delete ${c}`, noCatsAtAll: "No categories yet.",
-  noData: m => `No data for ${m}`, colDay: "Day", colNone: "None", colWork: "Work", colTotal: "Total", noNoteParen: "(no note)", noTicket: "No ticket", colTicket: "Ticket", colDays: "Days", colHours: "Hours", noJira: m => `No Jira tickets logged in ${m}.`, noMaint: m => `No 保守 time in ${m}.`,
+  noData: m => `No data for ${m}`, colDay: "Day", colNone: "None", colWork: "Work", colTotal: "Total", noNoteParen: "(no note)", noTicket: "No ticket", colTicket: "Ticket", colDays: "Days", colHours: "Hours", noJira: m => `No Jira tickets logged in ${m}.`,
   friday: (d, ago) => `It's Friday: time to back up. ${d ? `Last backup: ${d} (${ago === 1 ? "yesterday" : ago + " days ago"}).` : "You haven't made a backup yet."}`,
   backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in PG.`, pgDone: "Registered", pgRegister: "Register today's times in PG.", otBtn: "I'm doing overtime", otUndo: "Back to 退勤", pgOver: (d, t) => `${d} past 退勤 (${t}). Time to go home!`,
   tUnreadable: "Saved data was unreadable. A copy was kept; restore a backup.",
@@ -880,9 +883,9 @@ const I18N = {
   budgetLead: "今月使うカテゴリと予算。", allCats: "すべてのカテゴリ",
   allCatsHint: "マスター一覧。ここで名前を変えると全ての月に反映されます。休憩は組み込みで常に使えます。",
   newCat: "新しいカテゴリ", newCatName: "新しいカテゴリ名", add: "追加", settings: "設定", settingsHint: "予算の計算と、終了時刻のない記録に使います。",
-  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。",
+  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "Jira", reqJiraTitle: "このカテゴリの記録には Jira チケットが必要です",
   dayTitle: "日別の時間", dayLead: "PG と照合してください。", taskTitle: "Jira チケット別の時間", taskLead: "Jira に記録した時間と照合してください。",
-  jiraTitle: "Jira チケット別の保守", jiraHint: "Jira に記録した時間と照合してください。",
+  jiraHint: "Jira に記録した時間と照合してください。",
   prevWeek: "前の週", nextWeek: "次の週", today: "今日",
   hoursN: n => `${n}時間`, dayOffLower: "休み", nothingLogged: "記録なし", dayOff: "休み",
   leaveAria: d => `${d}に休みを追加`, full: "全日", am: "午前", pm: "午後",
@@ -920,7 +923,7 @@ const I18N = {
   notesFor: d => `${d}のメモ`, notesPh: "この日のメモ…", saved: "保存しました", hasNote: "メモあり",
   ofDay: "8時間中", ofDayN: h => `${h}時間中`, overtime: h => `残業 +${h}h`, budgetsOf: m => `${m}の予算`, noBudgets: "予算が未設定です。", openBudget: "予算タブへ ›", setBudgets: "予算タブで設定", monthWorked: "今月の勤務",
   noneWarn: h => `カテゴリ未設定 ${h}h`, noneWarnTitle: "カテゴリ未設定の最初の日を表示",
-  miss: n => `Jira チケットが必要な保守の記録が${n}件あります。`,
+  miss: n => `Jira チケットが必要な記録が${n}件あります。`,
   neg: n => `開始より前に終わる記録が${n}件あります。`,
   ovl: n => `次の記録と重なっている記録が${n}件あります（時間が二重に数えられます）。`,
   gaps: n => n === 1 ? "記録のない日：" : `記録のない日が${n}日あります：`,
@@ -938,7 +941,7 @@ const I18N = {
   noCatsIn: m => `${m}にはまだカテゴリがありません。`, copyFrom: m => `${m}からカテゴリと予算をコピー`, catToAdd: "追加するカテゴリ", addToMonth: "今月に追加",
   allIn: "すべてのカテゴリが今月に入っています。新しいカテゴリは「すべてのカテゴリ」で作成してください。", createUnder: "「すべてのカテゴリ」でカテゴリを作成してください。",
   colorFor: c => `${c} の色`, catName: "カテゴリ名", entriesUsing: "このカテゴリの記録数", deleteX: c => `${c} を削除`, noCatsAtAll: "カテゴリはまだありません。",
-  noData: m => `${m}のデータはありません`, colDay: "日", colNone: "未設定", colWork: "勤務", colTotal: "合計", noNoteParen: "（メモなし）", noTicket: "チケットなし", colTicket: "チケット", colDays: "日数", colHours: "時間", noJira: m => `${m}にJiraチケットの記録はありません。`, noMaint: m => `${m}の保守の記録はありません。`,
+  noData: m => `${m}のデータはありません`, colDay: "日", colNone: "未設定", colWork: "勤務", colTotal: "合計", noNoteParen: "（メモなし）", noTicket: "チケットなし", colTicket: "チケット", colDays: "日数", colHours: "時間", noJira: m => `${m}にJiraチケットの記録はありません。`,
   friday: (d, ago) => `金曜日です。バックアップしましょう。${d ? `前回：${d}（${ago === 1 ? "昨日" : ago + "日前"}）。` : "まだバックアップがありません。"}`,
   backupNow: "今すぐバックアップ", notThisWeek: "今週はしない", pgRemind: t => `終業は${t}です。今日の時間を PG に登録しましょう。`, pgDone: "登録済み", pgRegister: "今日の時間を PG に登録しましょう。", otBtn: "残業します", otUndo: "退勤に戻す", pgOver: (d, t) => `退勤時刻（${t}）を${d}過ぎています。帰りましょう！`,
   tUnreadable: "保存データを読み込めませんでした。コピーを残してあります。バックアップから復元してください。",
@@ -1314,12 +1317,12 @@ function renderLog(){
   renderWeek(); renderRail();
   const rows = monthRows(), cats = monthCats();
   const cnt = (n, one, many) => `${n} ${n>1?many:one}`;
-  const miss = rows.filter(e => e.category === MAINT && !e.jira).length;
+  const miss = rows.filter(e => needsJira(e.category) && !e.jira).length;
   const neg = rows.filter(e => e._min < 0).length;
   const ovl = rows.filter(e => e._ovl).length;
   // each warning lists its entries as buttons that jump to the field to fix
   const notes = [];
-  if (miss) notes.push([L("miss", miss), rows.filter(e => e.category === MAINT && !e.jira), "jira"]);
+  if (miss) notes.push([L("miss", miss), rows.filter(e => needsJira(e.category) && !e.jira), "jira"]);
   if (neg) notes.push([L("neg", neg), rows.filter(e => e._min < 0), "end"]);
   if (ovl) notes.push([L("ovl", ovl), rows.filter(e => e._ovl), "end"]);
   const gaps = missingDays(M);
@@ -1362,13 +1365,13 @@ function renderLog(){
         <span class="hrs">${fmt(work)}h <small>${L("work", brk && fmt(brk), lv && fmt(lv))}</small></span></div>
       <div class="ribbon">${ribbon}</div>
       <div class="sheet">${list.map(e => {
-        const cls = [e.category===BREAK?"brk":"", e.category===MAINT&&!e.jira?"miss":"", e._min<0?"neg":"", e._ovl?"ovl":"", e.category?"":"nocat", e._now?"active":""].join(" ");
+        const cls = [e.category===BREAK?"brk":"", needsJira(e.category)&&!e.jira?"miss":"", e._min<0?"neg":"", e._ovl?"ovl":"", e.category?"":"nocat", e._now?"active":""].join(" ");
         const k = f => `data-f="${f}" data-key="${e.id}:${f}"`;
         if (ro) return `<div class="entry ro ${cls}" style="--c:${e.category?colorOf(e.category):"transparent"}" data-id="${e.id}">
           <div class="times"><span class="tv">${e.start}</span>–<span class="tv end${e._auto?" a":""}">${minToT(e._end)}</span></div>
           <span class="task tv" title="${esc(e.task)}">${e.task ? esc(e.task) : `<span class="ph">${e.category===BREAK?L("brk"):L("noNote")}</span>`}</span>
           <span class="tag${e.category?"":" none"}" style="--c:${colorOf(e.category)}">${esc(e.category||L("noCategory"))}</span>
-          <span class="jira-w tv" title="${esc(e.jira)}">${e.jira ? esc(e.jira) : `<span class="ph">${e.category===MAINT?L("noJira"):""}</span>`}</span>
+          <span class="jira-w tv" title="${esc(e.jira)}">${e.jira ? esc(e.jira) : `<span class="ph">${needsJira(e.category)?L("noJira"):""}</span>`}</span>
           <span class="h">${fmt(e._hrs)}h</span>
           <span class="xw"></span>
         </div>`;
@@ -1378,7 +1381,7 @@ function renderLog(){
             : timeIn(e.end, `${k("end")} class="tm end" aria-label="${L("end")}" title="${L("clearEnd")}"`)}</div>
           <input class="task" ${k("task")} value="${esc(e.task)}" placeholder="${e.category===BREAK?L("brk"):L("addNote")}" aria-label="${L("task")}">
           ${catSelect(e.category, `${k("category")} aria-label="${L("category")}"`)}
-          <span class="jira-w"><input class="jira" ${k("jira")} value="${esc(e.jira)}" placeholder="${e.category===MAINT?L("jiraNeeded"):L("jira")}" aria-label="Jira"></span>
+          <span class="jira-w"><input class="jira" ${k("jira")} value="${esc(e.jira)}" placeholder="${needsJira(e.category)?L("jiraNeeded"):L("jira")}" aria-label="Jira"></span>
           <span class="h">${fmt(e._hrs)}h</span>
           <span class="xw"><button class="x" data-del="${e.id}" data-key="${e.id}:del" aria-label="${L("deleteEntry")}">×</button></span>
         </div>`;}).join("")}</div></section>`;
@@ -1492,6 +1495,7 @@ function renderBudget(){
     <button class="grip" data-grip="master" data-key="gm:${esc(x.name)}" aria-label="${esc(L("moveCat", x.name))}" title="${L("dragTitle")}">⋮⋮</button>
     <input type="color" value="${x.color}" data-color data-key="mc:${i}" aria-label="${esc(L("colorFor", x.name))}">
     <input value="${esc(x.name)}" data-rename data-key="mn:${i}" aria-label="${L("catName")}">
+    <label class="reqj" title="${esc(L("reqJiraTitle"))}"><input type="checkbox" data-reqjira ${x.jira ? "checked" : ""} aria-label="${esc(L("reqJiraTitle"))}"> ${L("reqJira")}</label>
     <span class="use" title="${L("entriesUsing")}">${usedIn(x.name)||""}</span>
     <span class="xw"><button class="x" data-delm data-key="md:${i}" aria-label="${esc(L("deleteX", x.name))}">×</button></span></div>`).join("") || `<p class="hint">${L("noCatsAtAll")}</p>`;
   $("#hpm").value = S.settings.hpm; $("#thr").value = S.settings.threshold;
@@ -1528,11 +1532,11 @@ function renderPivot(){
 /* by Jira ticket: for checking the hours against Jira. A task that is just a ticket ID counts as that ticket. */
 const ticketOf = e => e.jira || (/^[A-Z][A-Z0-9]*-\d+$/.test((e.task || "").trim()) ? e.task.trim() : "");
 function renderJira(){
-  const rows = monthRows(), g = new Map(), none = [];   // category -> ticket -> entries
+  const rows = monthRows(), g = new Map(), none = new Map();   // category -> ticket -> entries
   rows.forEach(e => { const k = ticketOf(e);
     if (k){ const c = e.category || ""; if (!g.has(c)) g.set(c, new Map()); const m = g.get(c); if (!m.has(k)) m.set(k, []); m.get(k).push(e); }
-    else if (e.category === MAINT) none.push(e); });
-  if (none.length && !g.has(MAINT)) g.set(MAINT, new Map());
+    else if (needsJira(e.category)){ if (!none.has(e.category)) none.set(e.category, []); none.get(e.category).push(e); } });
+  for (const c of none.keys()) if (!g.has(c)) g.set(c, new Map());
   if (!g.size){ $("#jiraList").innerHTML = `<div class="empty"><b>${L("noJira", monthName(M))}</b></div>`; return; }
   const order = [...monthCats(), ...[...g.keys()].filter(c => !monthCats().includes(c))];
   const cats = [...new Set(order)].filter(c => g.has(c));
@@ -1540,7 +1544,7 @@ function renderJira(){
   const byKey = (a, b) => a[0].localeCompare(b[0], undefined, {numeric: true});
   let total = 0;
   const body = cats.map(c => {
-    const m = g.get(c), miss = c === MAINT ? none : [];
+    const m = g.get(c), miss = none.get(c) || [];
     const sum = r2(sumH([...m.values()].flat()) + sumH(miss)); total += sum;
     return `<div class="jgrp" style="--c:${c ? colorOf(c) : "var(--bad)"}"><div class="jrow jhead">${tag(c)}<b>${fmt(sum)}</b></div>`
       + [...m].sort(byKey).map(([k, a]) => `<div class="jrow"><span>${esc(k)}</span><b>${fmt(sumH(a))}</b></div>`).join("")
@@ -1969,7 +1973,7 @@ $("#newMaster").onsubmit = ev => {
   if (isBuiltin(n)){ toast(L("tBuiltin", n)); return; }
   if (S.master.some(x => x.name === n)){ toast(L("tExists", n)); return; }
   const used = new Set(S.master.map(x => x.color));
-  S.master.push({ name:n, color: PALETTE.find(c => !used.has(c)) || PALETTE[S.master.length % PALETTE.length] });
+  S.master.push({ name:n, color: PALETTE.find(c => !used.has(c)) || PALETTE[S.master.length % PALETTE.length], jira: false });
   if (!monthCfg().cats.includes(n)) monthCfg().cats.push(n);
   ev.target.n.value = ""; save(); render(); toast(L("tCreated", n, monthName(M)));
 };
@@ -1999,6 +2003,10 @@ $("#master").addEventListener("click", ev => {
   S.master = S.master.filter(x => x !== item);
   for (const m of Object.values(S.months)){ m.cats = m.cats.filter(c => c !== item.name); delete m.budgets[item.name]; }
   save(); render();
+});
+document.addEventListener("change", ev => {
+  const c = ev.target.closest?.("[data-reqjira]"); if (!c) return;
+  S.master[+c.closest(".mrow").dataset.i].jira = c.checked; save(); render();
 });
 $("#hpm").onchange = e => { const v = +e.target.value; if (!(v > 0)){ toast(L("tHpm")); } else S.settings.hpm = v; save(); later(); };
 $("#thr").onchange = e => { const v = +e.target.value; if (!(v >= 0) || e.target.value === ""){ toast(L("tThr")); } else S.settings.threshold = v; save(); later(); };
