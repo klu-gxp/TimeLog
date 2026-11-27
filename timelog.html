@@ -1275,12 +1275,9 @@ function dayCardHTML(){
       <span class="dot"></span><span>${L("tlRunning", live.start, fmtDur(nm - toMin(live.start)))}</span>${live.category ? `<span class="tag" style="--c:${colorOf(live.category)}">${esc(live.category)}</span>` : `<b>${L("tlNoCat")}</b>`}</button>`;
     else if (during && nm >= from && !isRestDay(D)) status = day.length && lastEnd < nm ? `<div class="tlgap">${L("tlGap", minToT(lastEnd))}</div>` : !day.length ? `<div class="tlgap">${L("tlNone")}</div>` : "";
   }
-  // one summary line: the day's target (or time left), overtime, break, 休み
-  const expected = expectedHours(D), ot = overtimeOf(D);
-  const foot = off ? [esc(off[1])] : [
-    during ? L("tlLeft", fmt(Math.max(0, r2(expected - work)))) : expected === 0 ? L("nonWorkday") : L("ofDayN", fmt(expected)),
-    ot > 0 ? `<b class="otx">${L("overtime", fmt(ot))}</b>` : "",
-    brk ? L("brkN", fmt(brk)) : "", lv ? L("lvN", fmt(lv)) : ""].filter(Boolean);
+  // one small line: only overtime (the time left, break and leave are in the category list); a day off shows its name
+  const ot = overtimeOf(D);
+  const foot = off ? [esc(off[1])] : [ot > 0 ? `<b class="otx">${L("overtime", fmt(ot))}</b>` : ""].filter(Boolean);
   const right = off ? `<b class="offlbl">${esc(off[0])}</b>` : `<b>${during ? L("tlSoFar", fmt(work)) : fmt(work) + "h"}</b>`;
   // the day's categories with their time; pointing at one highlights where it sits on the bar
   const byCat = new Map(); day.forEach(e => byCat.set(e.category || "", (byCat.get(e.category || "") || 0) + e._hrs));
@@ -1291,7 +1288,7 @@ function dayCardHTML(){
     <div class="tlaxis"><span>${minToT(from)}</span>${nowIn ? `<b style="left:clamp(70px,${pct(nm)},calc(100% - 70px))">${L("tlNow", minToT(nm))}</b>` : ""}<span>${minToT(to)}</span></div>
     ${status}
     ${catList ? `<div class="dclist">${catList}</div>` : ""}
-    <span class="rl small">${foot.join(" · ")}</span>
+    ${foot.length ? `<span class="rl small">${foot.join(" · ")}</span>` : ""}
   </section>`;
 }
 // keep today's card and the week strip current while the app is open (only those, so typing isn't interrupted)
