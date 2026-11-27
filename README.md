@@ -27,7 +27,7 @@ Everything is stored in your browser's local storage, so it stays on this device
 - **Open end:** an entry with no end time runs until the next entry starts, or until the workday end for the last one. Adding an entry that starts exactly at an earlier entry's manual end clears that end.
 - **Being worked on:** entries whose date is today and whose time span includes now get an accent tint and outline.
 - **Tab title:** while an entry is running, the browser tab shows how long it has been going, such as `● 1:23 Unit testing` (the category if there is no task). Otherwise it shows the app name.
-- **Day card:** a timeline bar for the day, the hours so far, and a small overtime note when you have worked past the standard day. Full days off fill the whole bar.
+- **Day card:** a timeline bar for the day and the hours so far. When you have worked past the standard day, a tilted red `OT +2.5h` stamp (残 in the Japanese UI) appears in the bottom right corner of the card, and may overlap other items. Full days off fill the whole bar, with no summary line.
 - **Categories on the day card:** below the bar, each category used that day is listed with its total time, largest first. Pointing at (or tabbing to) a category highlights where it sits on the bar and dims the rest. Click it to keep the highlight, and click again to clear it. Uncategorised time is listed in red as None.
 - **Side column:** the week strip, notes for the day, the month's budgets (with a button to open the Budget tab), a countdown to the next day off, and a to-do list with deadlines.
 - **Leave:** add a full day, morning or afternoon off in one click. These are sized from your workday settings.

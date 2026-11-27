@@ -240,6 +240,10 @@ input.tm.bad,input[type=date].bad{border-color:var(--bad)}
 .td.done .tdtext{text-decoration:line-through;color:var(--muted);font-weight:500}
 .tdtoggle{align-self:flex-start;font-size:13px}
 
+.day-card{position:relative}
+.otstamp{position:absolute;right:14px;bottom:12px;transform:rotate(-10deg);border:2.5px solid var(--bad);border-radius:6px;color:var(--bad);padding:2px 10px;text-align:center;font-weight:700;line-height:1.05;pointer-events:none;background:color-mix(in srgb,var(--sheet) 75%,transparent)}
+.otstamp b{display:block;font-size:20px;font-family:var(--display);font-weight:600}
+.otstamp span{font-size:12px;font-weight:600}
 .tlhead{display:flex;justify-content:space-between;align-items:baseline}
 .tlhead b{font-family:var(--display);font-weight:500;font-size:22px}
 .tltrack{position:relative;height:22px;background:var(--soft);border-radius:3px;overflow:hidden}
@@ -1275,9 +1279,9 @@ function dayCardHTML(){
       <span class="dot"></span><span>${L("tlRunning", live.start, fmtDur(nm - toMin(live.start)))}</span>${live.category ? `<span class="tag" style="--c:${colorOf(live.category)}">${esc(live.category)}</span>` : `<b>${L("tlNoCat")}</b>`}</button>`;
     else if (during && nm >= from && !isRestDay(D)) status = day.length && lastEnd < nm ? `<div class="tlgap">${L("tlGap", minToT(lastEnd))}</div>` : !day.length ? `<div class="tlgap">${L("tlNone")}</div>` : "";
   }
-  // one small line: only overtime (the time left, break and leave are in the category list); a day off shows its name
+  // no summary line for break or leave (they are in the category list); a holiday or weekend shows its name. Overtime is a stamp.
   const ot = overtimeOf(D);
-  const foot = off ? [esc(off[1])] : [ot > 0 ? `<b class="otx">${L("overtime", fmt(ot))}</b>` : ""].filter(Boolean);
+  const foot = off && !isDayOff(D) ? [esc(off[1])] : [];
   const right = off ? `<b class="offlbl">${esc(off[0])}</b>` : `<b>${during ? L("tlSoFar", fmt(work)) : fmt(work) + "h"}</b>`;
   // the day's categories with their time; pointing at one highlights where it sits on the bar
   const byCat = new Map(); day.forEach(e => byCat.set(e.category || "", (byCat.get(e.category || "") || 0) + e._hrs));
@@ -1289,6 +1293,7 @@ function dayCardHTML(){
     ${status}
     ${catList ? `<div class="dclist">${catList}</div>` : ""}
     ${foot.length ? `<span class="rl small">${foot.join(" · ")}</span>` : ""}
+    ${ot > 0 ? `<div class="otstamp" title="${esc(L("overtime", fmt(ot)))}"><b>${L("otMark")}</b><span>+${fmt(ot)}h</span></div>` : ""}
   </section>`;
 }
 // keep today's card and the week strip current while the app is open (only those, so typing isn't interrupted)
