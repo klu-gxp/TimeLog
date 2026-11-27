@@ -119,6 +119,9 @@ input.tm.bad,input[type=date].bad{border-color:var(--bad)}
 .keyhint{font-size:12px;color:var(--muted)}
 .infobar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;background:var(--soft);border-bottom:1px solid var(--line);padding:8px 16px;font-weight:600}
 .infobar[hidden]{display:none}
+.infobar.nudge{background:color-mix(in srgb,var(--warn) 22%,var(--sheet));border-bottom-color:var(--warn);font-size:15px}
+.infobar.nudge.hard{background:var(--bad);border-bottom-color:var(--bad);color:#fff}
+.infobar.nudge.hard .btn{background:transparent;color:#fff;border-color:#fff}
 #taikin{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 #taikin .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-around;font-family:var(--display);font-size:min(34vw,62vh);line-height:1;font-weight:500;color:var(--accent)}
 #taikin .stamp{position:absolute;color:var(--bad);border:.15em solid var(--bad);border-radius:.3em;padding:0 .6em;line-height:1.25;font-weight:600;white-space:nowrap}
@@ -181,12 +184,12 @@ input.tm.bad,input[type=date].bad{border-color:var(--bad)}
 .ymt span{color:var(--muted);font-size:13px}
 .ycal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
 .ywd{font-size:11px;color:var(--muted);text-align:center}
-.yd{aspect-ratio:1;border:0;border-radius:3px;font:inherit;font-size:11px;padding:0;cursor:pointer;color:var(--ink);background:var(--soft);display:flex;align-items:center;justify-content:center;min-width:0}
+.yd{position:relative;aspect-ratio:1;border:0;border-radius:3px;font:inherit;font-size:11px;padding:0;cursor:pointer;color:var(--ink);background:var(--soft);display:flex;align-items:center;justify-content:center;min-width:0}
 .yd.we{color:var(--muted);background:transparent}
 .yd.l1{background:color-mix(in srgb,var(--accent) 22%,var(--sheet))}
 .yd.l2{background:color-mix(in srgb,var(--accent) 48%,var(--sheet))}
 .yd.l3{background:var(--accent);color:var(--accent-ink)}
-.yd.ot{box-shadow:inset 0 0 0 2px var(--warn)}
+.yd .otm{position:absolute;right:1px;bottom:1px;transform:rotate(-14deg);font-size:8px;font-weight:700;line-height:1.2;color:var(--bad);background:var(--sheet);border:1.5px solid var(--bad);border-radius:3px;padding:0 2px;pointer-events:none}
 .yd.off{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--muted) 35%,var(--sheet)) 0 3px,var(--sheet) 3px 6px);color:var(--muted)}
 .yd.hol:not(.l1):not(.l2):not(.l3):not(.off){color:var(--muted);background:transparent}   /* holidays look like weekends */
 .yd.today{outline:2px solid var(--ink);outline-offset:1px}
@@ -419,6 +422,8 @@ tbody tr+tr td{border-top:1px solid var(--line)}
 td.num,th.num{text-align:right}
 tfoot td{font-weight:700;border-top:1px solid var(--line);background:var(--soft)}
 td.z{color:var(--line)}
+tr.otday td{background:color-mix(in srgb,var(--bad) 9%,var(--sheet))}
+td .otm{display:inline-block;margin-left:6px;transform:rotate(-8deg);font-size:10px;font-weight:700;line-height:1.2;color:var(--bad);background:var(--sheet);border:1.5px solid var(--bad);border-radius:3px;padding:0 3px;vertical-align:1px}
 tr.today td,tr.restrow.today td{background:color-mix(in srgb,var(--accent) 12%,var(--sheet));box-shadow:inset 0 1px 0 color-mix(in srgb,var(--accent) 55%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--accent) 55%,transparent)}
 tr.today td:first-child{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--accent) 55%,transparent),inset 0 1px 0 color-mix(in srgb,var(--accent) 55%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--accent) 55%,transparent)}
 tr.today td:last-child{box-shadow:inset -1px 0 0 color-mix(in srgb,var(--accent) 55%,transparent),inset 0 1px 0 color-mix(in srgb,var(--accent) 55%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--accent) 55%,transparent)}
@@ -524,6 +529,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
 </header>
 
 <div class="infobar" id="backupBar" hidden></div>
+<div class="infobar nudge" id="lunchBar" hidden></div>
 <div class="infobar" id="pgBar" hidden></div>
 <div id="taikin" aria-hidden="true" hidden></div>
 <button class="btn" id="otBtn" hidden></button>
@@ -581,6 +587,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
           <label class="setting"><span data-i18n="dayStart">Workday starts at</span> <input class="tm" id="dayStart" inputmode="numeric"></label>
           <label class="setting"><span data-i18n="dayEnd">Workday ends at</span> <input class="tm" id="dayEnd" inputmode="numeric"></label>
           <label class="setting"><span data-i18n="breakMin">Break (minutes)</span> <input type="number" id="breakMin" min="0" step="5"></label>
+          <label class="setting"><span data-i18n="lunchAt">Break reminder at</span> <input class="tm" id="lunchAt" inputmode="numeric"></label>
         </div>
       </div>
     </div>
@@ -671,7 +678,7 @@ function armed(btn, label = L("delQ")){
 }
 
 /* state */
-function defaults(){ return { entries:[], master:[], months:{}, settings:{hpm:160, threshold:0.1, dayStart:"10:00", dayEnd:"19:00", breakMin:60} }; }
+function defaults(){ return { entries:[], master:[], months:{}, settings:{hpm:160, threshold:0.1, dayStart:"10:00", dayEnd:"19:00", breakMin:60, lunchAt:"13:30"} }; }
 function fromV1(o){
   const s = defaults();
   s.entries = (o.entries||[]).map(e => ({id:e.id||uid(), date:e.date, start:normTime(e.start)||"00:00", end:normTime(e.end)||"", task:e.task||"", category:e.category||"", jira:e.jira||""}));
@@ -792,7 +799,7 @@ const I18N = {
   budgetLead: "Categories used this month and their budgets.", allCats: "All categories",
   allCatsHint: "Master list. Renaming here updates every month. 休憩 is built in and always available.",
   newCat: "New category", newCatName: "New category name", add: "Add", settings: "Settings", settingsHint: "Used for budget math and open-ended entries.",
-  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
+  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", lunchAt: "Break reminder at", tLunchRange: "The break reminder must be after the workday starts and before it ends.", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
   dayTitle: "Hours by day", dayLead: "Use this to reconcile with your timesheet.", taskTitle: "Hours by ticket", taskLead: "Check these against your ticket system.",
   jiraHint: "Check these against your ticket system.",
   prevWeek: "Previous week", nextWeek: "Next week", today: "Today",
@@ -852,7 +859,7 @@ const I18N = {
   colorFor: c => `Color for ${c}`, catName: "Category name", entriesUsing: "Entries using this category", deleteX: c => `Delete ${c}`, noCatsAtAll: "No categories yet.",
   noData: m => `No data for ${m}`, colDay: "Day", colNone: "None", colWork: "Work", colTotal: "Total", noNoteParen: "(no note)", noTicket: "No ticket", colTicket: "Ticket", colDays: "Days", colHours: "Hours", noJira: m => `No tickets logged in ${m}.`,
   friday: (d, ago) => `It's Friday: time to back up. ${d ? `Last backup: ${d} (${ago === 1 ? "yesterday" : ago + " days ago"}).` : "You haven't made a backup yet."}`,
-  backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in your timesheet.`, pgDone: "Registered", pgRegister: "Register today's times in your timesheet.", breakWall: "BREAK", otBtn: "I'm doing overtime", otUndo: "Back to 退勤", pgOver: (d, t) => `${d} past 退勤 (${t}). Time to go home!`,
+  backupNow: "Back up now", notThisWeek: "Not this week", pgRemind: t => `The workday ends at ${t}. Register today's times in your timesheet.`, pgDone: "Registered", pgRegister: "Register today's times in your timesheet.", breakWall: "BREAK", otMark: "OT", lunchWall: "BREAK?", lunchBar1: d => d ? `No break yet today. You have been working for ${d}. Take a break soon.` : "No break yet today. Take a break soon.", lunchBar2: d => d ? `Still no break after ${d}! Take a break now.` : "Still no break today! Take a break now.", lunchStart: "Start break", otBtn: "I'm doing overtime", otUndo: "Back to 退勤", pgOver: (d, t) => `${d} past 退勤 (${t}). Time to go home!`,
   tUnreadable: "Saved data was unreadable. A copy was kept; restore a backup.",
   tMerged: (n, ms) => `Added ${n} month${n > 1 ? "s" : ""} from your workbooks: ${ms}`,
   tTimeFormat: "Use a time like 9:30, 930 or 9 (24-hour).", tTimeEmpty: "This time can't be empty.",
@@ -883,7 +890,7 @@ const I18N = {
   budgetLead: "今月使うカテゴリと予算。", allCats: "すべてのカテゴリ",
   allCatsHint: "マスター一覧。ここで名前を変えると全ての月に反映されます。休憩は組み込みで常に使えます。",
   newCat: "新しいカテゴリ", newCatName: "新しいカテゴリ名", add: "追加", settings: "設定", settingsHint: "予算の計算と、終了時刻のない記録に使います。",
-  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "チケット番号", reqJiraTitle: "このカテゴリの記録にはチケット番号が必要です",
+  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", lunchAt: "休憩リマインド", tLunchRange: "休憩リマインドは始業と終業の間に設定してください。", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "チケット番号", reqJiraTitle: "このカテゴリの記録にはチケット番号が必要です",
   dayTitle: "日別の時間", dayLead: "タイムシートとの照合にご利用ください。", taskTitle: "チケット別の時間", taskLead: "チケット管理システムと照合してください。",
   jiraHint: "チケット管理システムと照合してください。",
   prevWeek: "前の週", nextWeek: "次の週", today: "今日",
@@ -943,7 +950,7 @@ const I18N = {
   colorFor: c => `${c} の色`, catName: "カテゴリ名", entriesUsing: "このカテゴリの記録数", deleteX: c => `${c} を削除`, noCatsAtAll: "カテゴリはまだありません。",
   noData: m => `${m}のデータはありません`, colDay: "日", colNone: "未設定", colWork: "勤務", colTotal: "合計", noNoteParen: "（メモなし）", noTicket: "チケットなし", colTicket: "チケット", colDays: "日数", colHours: "時間", noJira: m => `${m}にチケットの記録はありません。`,
   friday: (d, ago) => `金曜日です。バックアップしましょう。${d ? `前回：${d}（${ago === 1 ? "昨日" : ago + "日前"}）。` : "まだバックアップがありません。"}`,
-  backupNow: "今すぐバックアップ", notThisWeek: "今週はしない", pgRemind: t => `終業は${t}です。今日の時間をタイムシートに登録しましょう。`, pgDone: "登録済み", pgRegister: "今日の時間をタイムシートに登録しましょう。", breakWall: "休|憩", otBtn: "残業します", otUndo: "退勤に戻す", pgOver: (d, t) => `退勤時刻（${t}）を${d}過ぎています。帰りましょう！`,
+  backupNow: "今すぐバックアップ", notThisWeek: "今週はしない", pgRemind: t => `終業は${t}です。今日の時間をタイムシートに登録しましょう。`, pgDone: "登録済み", pgRegister: "今日の時間をタイムシートに登録しましょう。", breakWall: "休|憩", otMark: "残", lunchWall: "休憩？", lunchBar1: d => d ? `今日はまだ休憩していません。${d}働いています。そろそろ休憩しましょう。` : "今日はまだ休憩していません。そろそろ休憩しましょう。", lunchBar2: d => d ? `${d}休憩なしです！今すぐ休憩しましょう。` : "まだ休憩していません！今すぐ休憩しましょう。", lunchStart: "休憩開始", otBtn: "残業します", otUndo: "退勤に戻す", pgOver: (d, t) => `退勤時刻（${t}）を${d}過ぎています。帰りましょう！`,
   tUnreadable: "保存データを読み込めませんでした。コピーを残してあります。バックアップから復元してください。",
   tMerged: (n, ms) => `ワークブックから${n}か月分を追加しました：${ms}`,
   tTimeFormat: "9:30、930、9 のように24時間制で入力してください。", tTimeEmpty: "この時刻は空にできません。",
@@ -1029,6 +1036,7 @@ const leaveHours = d => sumH(dayRows(d).filter(e => e.category === LEAVE));
 const workHours = d => sumH(dayRows(d).filter(isWork));
 const workStart = () => toMin(S.settings.dayStart) ?? 600;
 const workEnd = () => toMin(S.settings.dayEnd) ?? 1140;
+const lunchAt = () => toMin(S.settings.lunchAt) ?? 810;
 const dayH = () => Math.max(0, r2((workEnd() - workStart() - (+S.settings.breakMin || 0)) / 60));   // a standard day: end - start - break (8h by default)
 const expectedHours = d => (isWeekend(d) || holidayName(d)) ? 0 : Math.max(0, dayH() - leaveHours(d));
 const overtimeOf = d => Math.max(0, r2(workHours(d) - expectedHours(d)));
@@ -1501,6 +1509,7 @@ function renderBudget(){
   $("#hpm").value = S.settings.hpm; $("#thr").value = S.settings.threshold;
   $("#dayEnd").value = S.settings.dayEnd; $("#dayEnd").dataset.prev = S.settings.dayEnd;
   $("#dayStart").value = S.settings.dayStart; $("#dayStart").dataset.prev = S.settings.dayStart; $("#breakMin").value = S.settings.breakMin;
+  $("#lunchAt").value = S.settings.lunchAt; $("#lunchAt").dataset.prev = S.settings.lunchAt;
 }
 
 /* by day */
@@ -1522,8 +1531,8 @@ function renderPivot(){
   const v = (n, c) => n ? `<td class="num${nc(c)}">${fmt(n)}</td>` : `<td class="num z${nc(c)}">–</td>`;
   const work = d => r2(cell(d,null) - cell(d,BREAK) - cell(d,LEAVE));
   $("#pivot").innerHTML = `<div class="scroll"><table><thead><tr><th>${L("colDay")}</th>${cats.map(c => `<th class="num${nc(c)}"><span class="tag${c?"":" none"}" style="--c:${colorOf(c)}">${esc(c||L("colNone"))}</span></th>`).join("")}<th class="num">${L("colWork")}</th><th class="num">${L("colTotal")}</th></tr></thead>
-    <tbody>${days.map(d => { const o = dObj(d), lbl = `<b>${o.getDate()}</b> ${WD_JA[o.getDay()]}`;
-      const tc = d === today() ? " today" : "";
+    <tbody>${days.map(d => { const o = dObj(d), lbl = `<b>${o.getDate()}</b> ${WD_JA[o.getDay()]}${overtimeOf(d) > 0 ? ` <span class="otm" title="${esc(L("otTitle", fmt(overtimeOf(d))))}">${L("otMark")}</span>` : ""}`;
+      const tc = (d === today() ? " today" : "") + (overtimeOf(d) > 0 ? " otday" : "");
       if (isDayOff(d)) return `<tr class="restrow offrow${tc}" data-rest="${d}"><td>${lbl} <span class="restlbl">${esc(L("dayOff"))}</span></td>${cats.map(c => v(cell(d,c), c)).join("")}<td class="num">${fmt(work(d))}</td><td class="num">${fmt(cell(d,null))}</td></tr>`;
       if (restDays.includes(d)) return `<tr class="restrow${tc}" data-rest="${d}"><td>${lbl} <span class="restlbl">${esc(holidayName(d))}</span></td>${cats.map(() => `<td class="num">–</td>`).join("")}<td class="num">–</td><td class="num">–</td></tr>`;
       return `<tr class="${tc.trim()}"><td>${lbl}</td>${cats.map(c => v(cell(d,c), c)).join("")}<td class="num"><b>${fmt(work(d))}</b></td><td class="num">${fmt(cell(d,null))}</td></tr>`; }).join("")}</tbody>
@@ -1557,9 +1566,25 @@ function renderJira(){
 /* render: deferred so focus can move first, then restored by data-key */
 let view = "log", pending = false;
 /* the last 10 minutes of a workday: remind to register the day's times in timesheet (until dismissed or the workday ends) */
+/* the tab title shows the running entry: "● 1:23 Unit testing" (task, else category), or just the app name when nothing is running */
+const BASE_TITLE = document.title;
+function updateTitle(){
+  const t = today(), nm = nowMin();
+  const cur = dayRows(t).filter(e => e._now).sort((a, b) => toMin(b.start) - toMin(a.start))[0];
+  if (!cur){ document.title = BASE_TITLE; return; }
+  const m = Math.max(0, nm - toMin(cur.start)), name = (cur.task || cur.category || "").trim();
+  document.title = `● ${Math.floor(m / 60)}:${pad(m % 60)}${name ? " " + (name.length > 28 ? name.slice(0, 27) + "…" : name) : ""}`;
+}
+setInterval(updateTitle, 15000);
 const STAMPS = (() => { let q = 11; const r = () => (q = (q * 9301 + 49297) % 233280) / 233280;
   return Array.from({length: 400}, () => ({x: +(3 + r() * 94).toFixed(1), y: +(3 + r() * 94).toFixed(1), a: Math.round(r() * 50 - 25), f: +(1.6 + r() * 1.6).toFixed(2)})); })();
 /* the background after 退勤: giant characters darken, then stamps pile up. 残業 replaces 退勤 once you say you're working late. */
+/* from the break reminder time with no break logged: a faint BREAK? that strengthens over two hours */
+function renderLunchWall(nm, from){
+  const w = $("#taikin"), p = Math.min(1, Math.max(0, (nm - from) / 120));
+  $("#otBtn").hidden = true; w.hidden = false;
+  w.innerHTML = `<div class="big" style="opacity:${(0.03 + 0.08 * p).toFixed(3)};font-size:min(20vw,52vh)"><span>${L("lunchWall")}</span></div>`;
+}
 function renderBreakWall(){
   const w = $("#taikin"), parts = L("breakWall").split("|");
   $("#otBtn").hidden = true; w.hidden = false;
@@ -1583,7 +1608,18 @@ function renderPgBar(){
   if (todays.length && !todays.some(e => e.category === LEAVE)) end += Math.min(...todays.map(e => toMin(e.start))) - workStart();
   end = Math.min(end, 1439);
   const workday = !isRestDay(t) && (!isWeekend(t) || todays.length > 0), over = nm >= end, askPg = S.pgDone !== t;
+  // the break reminder time moves with when you started: starting an hour late or early shifts it by that hour
+  const lunchFrom = lunchAt() + (todays.length ? Math.min(...todays.map(e => toMin(e.start))) - workStart() : 0);
+  const lunchDue = workday && !over && nm >= lunchFrom && !todays.some(e => e.category === BREAK || e.category === LEAVE);
+  const lb = $("#lunchBar");
+  lb.hidden = !lunchDue;
+  if (lunchDue){
+    const hard = nm >= lunchFrom + 60, first = todays.length ? Math.min(...todays.map(e => toMin(e.start))) : null;
+    lb.className = "infobar nudge" + (hard ? " hard" : "");
+    lb.innerHTML = `<span>${L(hard ? "lunchBar2" : "lunchBar1", first === null ? "" : fmtDur(Math.max(0, nm - first)))}</span><button class="btn quiet" data-startbreak>${L("lunchStart")}</button>`;
+  }
   if (dayRows(t).some(e => e._now && e.category === BREAK)) renderBreakWall();   // on a break right now: a calm wallpaper instead
+  else if (lunchDue) renderLunchWall(nm, lunchFrom);
   else renderWall(workday && over, nm - end, S.otDay === t);
   const show = workday && nm >= end - 10 && askPg;   // the banner is only the timesheet reminder
   bar.hidden = !show;
@@ -1680,18 +1716,18 @@ function renderYear(){
       const lvl = w <= 0 ? 0 : w <= 4 ? 1 : w < 8 ? 2 : 3;
       const cls = ["yd", "l" + lvl, off ? "off" : "", hol ? "hol" : "", isWeekend(d) ? "we" : "", o ? "ot" : "", d === today() ? "today" : ""].join(" ");
       const tip = `${shortDay(d)}: ${off ? L("dayOff") : w ? L("hoursN", fmt(w)) : hol || L("nothingLogged")}${o ? " · " + L("otTitle", fmt(o)) : ""}${hol && (w || off) ? " · " + hol : ""}`;
-      cells += `<button class="${cls}" data-yday="${d}" title="${esc(tip)}" aria-label="${esc(tip)}">${+d.slice(8)}</button>`;
+      cells += `<button class="${cls}" data-yday="${d}" title="${esc(tip)}" aria-label="${esc(tip)}">${+d.slice(8)}${o ? `<span class="otm" style="opacity:${(0.6 + Math.min(o, 4) / 4 * 0.4).toFixed(2)}">${L("otMark")}</span>` : ""}</button>`;
     }
     html += `<section class="ymon"><button class="ymt" data-ymonth="${m}"><b>${isJa() ? mo + "月" : MONTHS[mo-1]}</b><span>${mWork ? fmt(mWork) + "h" : ""}</span></button><div class="ycal">${wdHead}${cells}</div></section>`;
   }
   $("#yearGrid").innerHTML = html;
-  $("#yearKey").innerHTML = `<span><i class="yd l1"></i>${L("yKey4")}</span><span><i class="yd l2"></i>${L("yKey7")}</span><span><i class="yd l3"></i>${L("yKey8")}</span><span><i class="yd l3 ot"></i>${L("yOT")}</span><span><i class="yd off"></i>${L("dayOff")}</span>`;
+  $("#yearKey").innerHTML = `<span><i class="yd l1"></i>${L("yKey4")}</span><span><i class="yd l2"></i>${L("yKey7")}</span><span><i class="yd l3"></i>${L("yKey8")}</span><span><i class="yd l3 ot"><span class="otm">${L("otMark")}</span></i>${L("yOT")}</span><span><i class="yd off"></i>${L("dayOff")}</span>`;
 }
 
 function render(){
   const key = document.activeElement?.dataset?.key;
   applyStatic();
-  renderBackupBar(); renderPgBar();
+  renderBackupBar(); renderPgBar(); updateTitle();
   $("#monthLabel").textContent = monthName(M);
   if (view === "log") renderLog();
   if (view === "budget") renderBudget();
@@ -1714,7 +1750,7 @@ function go(v){
 document.addEventListener("change", ev => {
   const t = ev.target;
   if (!t.classList?.contains("tm")) return;
-  const v = normTime(t.value), required = t.dataset.f === "start" || t.id === "dayEnd" || t.id === "dayStart";
+  const v = normTime(t.value), required = t.dataset.f === "start" || t.id === "dayEnd" || t.id === "dayStart" || t.id === "lunchAt";
   if (v === null || (required && v === "")){
     t.value = t.dataset.prev || ""; t.classList.add("bad"); setTimeout(() => t.classList.remove("bad"), 1500);
     toast(v === null ? L("tTimeFormat") : L("tTimeEmpty"));
@@ -2019,6 +2055,7 @@ $("#hpm").onchange = e => { const v = +e.target.value; if (!(v > 0)){ toast(L("t
 $("#thr").onchange = e => { const v = +e.target.value; if (!(v >= 0) || e.target.value === ""){ toast(L("tThr")); } else S.settings.threshold = v; save(); later(); };
 $("#dayStart").addEventListener("change", e => { if (toMin(e.target.value) >= workEnd()){ toast(L("tWorkdayOrder")); e.target.value = S.settings.dayStart; return; } S.settings.dayStart = e.target.value; save(); later(); });
 $("#dayEnd").addEventListener("change", e => { if (toMin(e.target.value) <= workStart()){ toast(L("tWorkdayOrder")); e.target.value = S.settings.dayEnd; return; } S.settings.dayEnd = e.target.value; save(); later(); });
+$("#lunchAt").addEventListener("change", e => { const m = toMin(e.target.value); if (m < workStart() || m >= workEnd()){ toast(L("tLunchRange")); e.target.value = S.settings.lunchAt; return; } S.settings.lunchAt = e.target.value; save(); later(); });
 $("#breakMin").addEventListener("change", e => { const v = Math.round(+e.target.value); if (e.target.value === "" || !(v >= 0) || v >= workEnd() - workStart()){ toast(L("tBreak")); e.target.value = S.settings.breakMin; return; } S.settings.breakMin = v; save(); later(); });
 
 /* reorder: drag the ⋮⋮ handle (mouse or touch), or focus it and press ↑/↓ */
@@ -2087,6 +2124,10 @@ function backup(){
 $("#exportJson").onclick = backup;
 $("#langBtn").onclick = () => { S.settings.lang = isJa() ? "en" : "ja"; save(); render(); };
 $("#otBtn").addEventListener("click", () => { S.otDay = S.otDay === today() ? "" : today(); save(); renderPgBar(); });
+$("#lunchBar").addEventListener("click", ev => {
+  if (!ev.target.closest("[data-startbreak]")) return;
+  S.entries.push({ id: uid(), date: today(), start: minToT(nowMin()), end: "", task: "", category: BREAK, jira: "" }); save(); render();
+});
 $("#pgBar").addEventListener("click", ev => { if (ev.target.closest("[data-pgdone]")){ S.pgDone = today(); save(); renderPgBar(); } });
 $("#backupBar").addEventListener("click", ev => {
   if (ev.target.closest("[data-backup]")) backup();

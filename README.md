@@ -25,25 +25,26 @@ Everything is stored in your browser's local storage, so it stays on this device
 - **From default:** 10:00 on an empty day (your workday start), otherwise the end of the time logged without gaps from the start of the day. It stays blank if the last entry is open-ended.
 - **Open end:** an entry with no end time runs until the next entry starts, or until the workday end for the last one. Adding an entry that starts exactly at an earlier entry's manual end clears that end.
 - **Being worked on:** entries whose date is today and whose time span includes now get an accent tint and outline.
+- **Tab title:** while an entry is running, the browser tab shows how long it has been going, such as `● 1:23 Unit testing` (the category if there is no task). Otherwise it shows the app name.
 - **Day card:** a timeline bar for the day, the time left or overtime, and breaks. Full days off fill the whole bar.
 - **Side column:** the week strip, notes for the day, the month's budgets (with a button to open the Budget tab), a countdown to the next day off, and a to-do list with deadlines.
 - **Leave:** add a full day, morning or afternoon off in one click. These are sized from your workday settings.
 
 ### Budget
 - Plan hours per category in person-months (PM). The row shows used hours, the pace to month end, and either **On track** or **Can't finish**, with the hours a day you would need.
-- **Settings:** hours per person-month, the warning threshold, workday start, workday end and break (minutes).
+- **Settings:** hours per person-month, the warning threshold, workday start, workday end, break (minutes) and the break reminder time.
 - **Standard day:** end minus start minus break (8h with 10:00, 19:00 and a 60-minute break). It drives expected hours, overtime and leave sizes.
 - **Categories:** a master list plus which categories each month uses. Drag to reorder, rename everywhere, and delete categories that are not in use.
 - **Requires ticket #:** each category has a "Ticket #" checkbox. When it is on, entries in that category without a ticket are flagged in red in the Log tab, counted in the warning above the log, and listed under "No ticket" in the By month tab. New categories start with it off.
 - **Closed months** are read-only.
 
 ### By month
-- Hours per day by category, with today highlighted.
+- Hours per day by category, with today highlighted. Days with overtime have a light red row and the same small `OT` stamp (残 in the Japanese UI) next to the weekday. Hover the stamp for the overtime hours.
 - Totals show person-months in brackets beside the hours, for example `12.5 (0.08 PM)`, using your "hours per person-month" setting.
 - **Hours by ticket:** grouped by category, one row per ticket with its hours. Each category that requires a ticket # gets a red "No ticket" row for entries missing one. Use it to compare against your ticket system.
 
 ### By year
-- Twelve small calendars shaded by hours worked, with days off, holidays and overtime marked.
+- Twelve small calendars shaded by hours worked, with days off and holidays marked. A day with overtime gets a small tilted red `OT` stamp (残 in the Japanese UI) that gets stronger the more overtime there is. Hover a day for the exact hours.
 - Click a month heading to open it in **By month**. Click a day to open it in **Log**.
 
 Press `/` to search every month.
@@ -55,6 +56,7 @@ Press `/` to search every month.
 - **Wallpaper:** once past clock-out, giant 退勤 (CLOCK OUT in the English copy) appears behind the page and darkens over 90 minutes. One red stamp is added for every minute past clock-out, scaled to the window size.
 - **Overtime button:** "I'm doing overtime" (bottom right) switches the wallpaper and stamps to 残業 (OVERTIME), with the same look. Press it again to switch back. It resets at midnight.
 - Not shown on days off, holidays, or weekends with nothing logged.
+- **Lunch nudge:** at your break reminder time (13:30 by default, set in the Budget tab), moved earlier or later by however much earlier or later than your workday start you actually began that day, if you have not logged a break today, an amber banner appears at the top: "No break yet today. You have been working for 4h. Take a break soon." An hour later it turns red: "Still no break after 5h 10m! Take a break now." The banner has a **Start break** button that adds a break starting now. A faint "BREAK?" (休憩？ in the Japanese UI) also appears behind the page and gets slightly stronger over two hours. There is no way to skip it: it goes away once any break is logged. It is not shown on leave days, and the clock-out wallpaper takes over after your workday end.
 - **Break wallpaper:** while a Break entry is running right now (today, between its start and end, or open-ended), a calm, fixed-strength wallpaper of giant "BREAK" (休憩 in the Japanese UI) replaces the clock-out wallpaper, and the overtime button is hidden. It goes away when the break ends.
 
 ## Built-in categories and holidays
