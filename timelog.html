@@ -327,7 +327,7 @@ select.tag:hover{background:color-mix(in srgb,var(--c) 20%,var(--sheet))}
 .ribbon i{display:block;height:100%;background:var(--c);min-width:2px}
 .ribbon i.brk{background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 5px)}
 .sheet{background:var(--sheet);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.entry{display:grid;grid-template-columns:160px minmax(0,1fr) auto 112px 54px 30px;gap:10px;align-items:center;padding:6px 10px 6px 14px;border-top:1px solid var(--line);position:relative}
+.entry{display:grid;grid-template-columns:160px minmax(0,1fr) auto 112px 54px 58px;gap:10px;align-items:center;padding:6px 10px 6px 14px;border-top:1px solid var(--line);position:relative}
 .entry:first-child{border-top:0}
 .entry::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,transparent)}
 .entry.brk{background:color-mix(in srgb,var(--soft) 60%,transparent)}
@@ -364,8 +364,10 @@ select.tag:hover{background:color-mix(in srgb,var(--c) 20%,var(--sheet))}
 .h{text-align:right;font-weight:700}
 .x{border:0;background:none;cursor:pointer;color:var(--muted);width:26px;height:26px;border-radius:4px;font-size:16px;line-height:1}
 .x:hover{background:var(--bad-soft);color:var(--bad)}
-.xw{position:relative;width:26px;height:26px;justify-self:end}
+.xw{position:relative;width:56px;height:26px;justify-self:end}
 .xw .x{position:absolute;right:0;top:0}
+.xw .cont{position:absolute;right:28px;top:0;border:0;background:none;cursor:pointer;color:var(--muted);width:26px;height:26px;border-radius:4px;font-size:11px;line-height:1}
+.xw .cont:hover{background:var(--soft);color:var(--accent)}
 .x.armed{width:auto;padding:0 10px;background:var(--bad);color:#fff;font-size:12px;font-weight:700;white-space:nowrap;z-index:3;box-shadow:0 0 0 3px var(--sheet)}
 .empty{text-align:center;color:var(--muted);padding:44px 20px;border:1px dashed var(--line);border-radius:8px}
 .empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
@@ -484,7 +486,7 @@ th.nocol .tag.none{--c:var(--bad)!important;color:var(--bad);font-style:normal;f
   .tabs button{padding:8px 10px}
   main{padding:16px 14px 70px}
   .cols{grid-template-columns:1fr}
-  .entry{grid-template-columns:minmax(0,1fr) auto 48px;grid-template-areas:"task task del" "times tag h" "jira jira jira";row-gap:2px;column-gap:8px}
+  .entry{grid-template-columns:minmax(0,1fr) auto 58px;grid-template-areas:"task task del" "times tag h" "jira jira jira";row-gap:2px;column-gap:8px}
   .entry .task{grid-area:task}
   .entry .times{grid-area:times}
   .entry .tag{grid-area:tag;justify-self:end}
@@ -799,7 +801,7 @@ const I18N = {
   budgetLead: "Categories used this month and their budgets.", allCats: "All categories",
   allCatsHint: "Master list. Renaming here updates every month. 休憩 is built in and always available.",
   newCat: "New category", newCatName: "New category name", add: "Add", settings: "Settings", settingsHint: "Used for budget math and open-ended entries.",
-  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", lunchAt: "Break reminder at", tLunchRange: "The break reminder must be after the workday starts and before it ends.", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
+  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", contTitle: "Continue from now", tContinued: (n, t) => `Continuing ${n ? n + " " : ""}from ${t}`, lunchAt: "Break reminder at", tLunchRange: "The break reminder must be after the workday starts and before it ends.", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
   dayTitle: "Hours by day", dayLead: "Use this to reconcile with your timesheet.", taskTitle: "Hours by ticket", taskLead: "Check these against your ticket system.",
   jiraHint: "Check these against your ticket system.",
   prevWeek: "Previous week", nextWeek: "Next week", today: "Today",
@@ -890,7 +892,7 @@ const I18N = {
   budgetLead: "今月使うカテゴリと予算。", allCats: "すべてのカテゴリ",
   allCatsHint: "マスター一覧。ここで名前を変えると全ての月に反映されます。休憩は組み込みで常に使えます。",
   newCat: "新しいカテゴリ", newCatName: "新しいカテゴリ名", add: "追加", settings: "設定", settingsHint: "予算の計算と、終了時刻のない記録に使います。",
-  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", lunchAt: "休憩リマインド", tLunchRange: "休憩リマインドは始業と終業の間に設定してください。", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "チケット番号", reqJiraTitle: "このカテゴリの記録にはチケット番号が必要です",
+  hpm: "1人月あたりの時間", thr: "予算残りの警告（人月）", dayStart: "始業時刻", dayEnd: "終業時刻", breakMin: "休憩（分）", contTitle: "今から続ける", tContinued: (n, t) => `${n ? n + "を" : ""}${t}から再開しました`, lunchAt: "休憩リマインド", tLunchRange: "休憩リマインドは始業と終業の間に設定してください。", tWorkdayOrder: "終業時刻は始業時刻より後にしてください。", tBreak: "休憩は0以上で、勤務時間より短くしてください。", reqJira: "チケット番号", reqJiraTitle: "このカテゴリの記録にはチケット番号が必要です",
   dayTitle: "日別の時間", dayLead: "タイムシートとの照合にご利用ください。", taskTitle: "チケット別の時間", taskLead: "チケット管理システムと照合してください。",
   jiraHint: "チケット管理システムと照合してください。",
   prevWeek: "前の週", nextWeek: "次の週", today: "今日",
@@ -1391,7 +1393,7 @@ function renderLog(){
           ${catSelect(e.category, `${k("category")} aria-label="${L("category")}"`)}
           <span class="jira-w"><input class="jira" ${k("jira")} value="${esc(e.jira)}" placeholder="${needsJira(e.category)?L("jiraNeeded"):L("jira")}" aria-label="Ticket #"></span>
           <span class="h">${fmt(e._hrs)}h</span>
-          <span class="xw"><button class="x" data-del="${e.id}" data-key="${e.id}:del" aria-label="${L("deleteEntry")}">×</button></span>
+          <span class="xw">${e.date.slice(0,7) === today().slice(0,7) && e.category !== LEAVE ? `<button class="cont" data-cont="${e.id}" title="${esc(L("contTitle"))}" aria-label="${esc(L("contTitle"))}">▶</button>` : ""}<button class="x" data-del="${e.id}" data-key="${e.id}:del" aria-label="${L("deleteEntry")}">×</button></span>
         </div>`;}).join("")}</div></section>`;
   }
   $("#days").innerHTML = html;
@@ -1959,6 +1961,15 @@ form.task.addEventListener("blur", () => setTimeout(acClose, 120));
 acList.addEventListener("mousedown", ev => { const li = ev.target.closest("[data-ac]"); if (li){ ev.preventDefault(); acPick(+li.dataset.ac); } });
 
 /* entries */
+/* continue a task from right now: same task, category and ticket #, starting now (nearest 5 minutes), no end */
+$("#days").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-cont]"); if (!b) return;
+  const e = S.entries.find(x => x.id === b.dataset.cont); if (!e) return;
+  const t = today(), ne = { id: uid(), date: t, start: nowTime(), end: "", task: e.task, category: e.category, jira: e.jira };
+  if (ne.category && !isBuiltin(ne.category) && !monthCfg().cats.includes(ne.category)) monthCfg().cats.push(ne.category);
+  S.entries.push(ne); D = t; save(); render();
+  toast(L("tContinued", ne.task || ne.category || "", ne.start));
+});
 $("#days").addEventListener("change", ev => {
   const f = ev.target.dataset.f; if (!f) return;
   if (isClosed(M)){ toast(L("tClosedChange", monthName(M))); later(); return; }

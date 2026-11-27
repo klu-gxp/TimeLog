@@ -21,6 +21,7 @@ Everything is stored in your browser's local storage, so it stays on this device
 
 ### Log
 - **Add entry:** From, To, task, ticket # and category. Typing a task suggests earlier tasks and fills in their usual category and ticket.
+- **Continue from now:** entries from the current month have a small ▶ button next to the delete button. It adds a new entry for today with the same task, category and ticket #, starting now (rounded to the nearest 5 minutes) with no end time, and jumps to today. A running entry with no end time ends when the new one starts. Leave entries, earlier months and closed months do not have the button.
 - **Category:** starts on the first category in the list. There is no "no category" option.
 - **From default:** 10:00 on an empty day (your workday start), otherwise the end of the time logged without gaps from the start of the day. It stays blank if the last entry is open-ended.
 - **Open end:** an entry with no end time runs until the next entry starts, or until the workday end for the last one. Adding an entry that starts exactly at an earlier entry's manual end clears that end.
