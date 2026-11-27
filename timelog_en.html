@@ -244,6 +244,14 @@ input.tm.bad,input[type=date].bad{border-color:var(--bad)}
 .tlhead b{font-family:var(--display);font-weight:500;font-size:22px}
 .tltrack{position:relative;height:22px;background:var(--soft);border-radius:3px;overflow:hidden}
 .tltrack i{position:absolute;top:0;bottom:0;display:block}
+.tltrack i{transition:opacity .15s}
+.tltrack i.dim{opacity:.18}
+.dclist{display:grid;gap:2px;margin:8px 0 4px}
+.dcrow{display:flex;justify-content:space-between;align-items:center;gap:8px;border:0;background:none;font:inherit;font-size:14px;color:var(--ink);padding:5px 8px 5px 12px;border-radius:5px;cursor:pointer;position:relative;text-align:left}
+.dcrow::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:2px;background:var(--c)}
+.dcrow b{font-variant-numeric:tabular-nums;font-weight:500}
+.dcrow:hover,.dcrow.on{background:color-mix(in srgb,var(--c) 14%,transparent)}
+.dcrow.pin{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent)}
 .tltrack i.brk{background:repeating-linear-gradient(45deg,var(--line) 0 3px,transparent 3px 6px)}
 .tlfuture{position:absolute;top:0;bottom:0;right:0;background:repeating-linear-gradient(90deg,transparent 0 6px,color-mix(in srgb,var(--muted) 22%,transparent) 6px 7px)}
 .tlnow{position:absolute;top:0;bottom:0;border-left:2px solid var(--ink)}
@@ -800,7 +808,7 @@ const I18N = {
   budgetLead: "Categories used this month and their budgets.", allCats: "All categories",
   allCatsHint: "Master list. Renaming here updates every month. Break is built in and always available.",
   newCat: "New category", newCatName: "New category name", add: "Add", settings: "Settings", settingsHint: "Used for budget math and open-ended entries.",
-  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", contTitle: "Continue from now", tContinued: (n, t) => `Continuing ${n ? n + " " : ""}from ${t}`, lunchAt: "Break reminder at", tLunchRange: "The break reminder must be after the workday starts and before it ends.", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
+  hpm: "Hours per person-month", thr: "Warn if under budget by (PM)", dayStart: "Workday starts at", dayEnd: "Workday ends at", breakMin: "Break (minutes)", hlTitle: "Highlight on the timeline", contTitle: "Continue from now", tContinued: (n, t) => `Continuing ${n ? n + " " : ""}from ${t}`, lunchAt: "Break reminder at", tLunchRange: "The break reminder must be after the workday starts and before it ends.", tWorkdayOrder: "The workday must end after it starts.", tBreak: "Break must be 0 or more, and shorter than the workday.", reqJira: "Ticket #", reqJiraTitle: "Entries in this category need a ticket #",
   dayTitle: "Hours by day", dayLead: "Use this to reconcile with your timesheet.", taskTitle: "Hours by ticket", taskLead: "Check these against your ticket system.",
   jiraHint: "Check these against your ticket system.",
   prevWeek: "Previous week", nextWeek: "Next week", today: "Today",
@@ -1142,6 +1150,13 @@ document.addEventListener("focusout", ev => { if (ev.target.id === "dayNote" && 
 
 /* The day card. Today it becomes a timeline of the day with a "now" line, what's running, and time left. */
 const fmtDur = m => { const h = Math.floor(m / 60), mm = m % 60; return (h ? `${h}h` : "") + (h && mm ? " " : "") + (mm || !h ? `${mm}m` : ""); };
+let HL_PIN = null, HL_HOVER = null, HL_DAY = null;   // the category highlighted on the day card's bar: hovered, or pinned by a click
+function applyHL(){
+  if (HL_DAY !== D){ HL_DAY = D; HL_PIN = null; HL_HOVER = null; }
+  const c = HL_HOVER !== null ? HL_HOVER : HL_PIN;
+  document.querySelectorAll("#rail .day-card .tltrack i[data-cat]").forEach(i => i.classList.toggle("dim", c !== null && i.dataset.cat !== c));
+  document.querySelectorAll("#rail .day-card .dcrow").forEach(r => { r.classList.toggle("on", c !== null && r.dataset.cat === c); r.classList.toggle("pin", HL_PIN !== null && r.dataset.cat === HL_PIN); });
+}
 function dayCardHTML(){
   const day = dayRows(D), isToday = D === today();
   const work = sumH(day.filter(isWork)), brk = sumH(day.filter(e => e.category === BREAK)), lv = sumH(day.filter(e => e.category === LEAVE));
@@ -1156,7 +1171,7 @@ function dayCardHTML(){
   const offFill = off && day.length, lastEnd0 = Math.max(0, ...day.map(e => e._end));   // a full day off fills the bar up to the workday end
   const pct = m => ((m - from) / (to - from) * 100).toFixed(2) + "%";
   const segs = day.map(e => { const a = Math.max(from, toMin(e.start)), b = offFill && e._end === lastEnd0 ? to : Math.min(to, e._end); if (b <= a) return "";
-    return `<i class="${e.category === BREAK ? "brk" : ""}" style="left:${pct(a)};width:calc(${((b - a) / (to - from) * 100).toFixed(2)}% - 1px);background:${e.category === BREAK ? "" : e.category ? colorOf(e.category) : "var(--bad)"}"></i>`; }).join("");
+    return `<i data-cat="${esc(e.category || "")}" class="${e.category === BREAK ? "brk" : ""}" style="left:${pct(a)};width:calc(${((b - a) / (to - from) * 100).toFixed(2)}% - 1px);background:${e.category === BREAK ? "" : e.category ? colorOf(e.category) : "var(--bad)"}"></i>`; }).join("");
   const nowIn = during && nm >= from && nm <= to;
   // today only: what's running, or a gap
   let status = "";
@@ -1173,11 +1188,15 @@ function dayCardHTML(){
     ot > 0 ? `<b class="otx">${L("overtime", fmt(ot))}</b>` : "",
     brk ? L("brkN", fmt(brk)) : "", lv ? L("lvN", fmt(lv)) : ""].filter(Boolean);
   const right = off ? `<b class="offlbl">${esc(off[0])}</b>` : `<b>${during ? L("tlSoFar", fmt(work)) : fmt(work) + "h"}</b>`;
+  // the day's categories with their time; pointing at one highlights where it sits on the bar
+  const byCat = new Map(); day.forEach(e => byCat.set(e.category || "", (byCat.get(e.category || "") || 0) + e._hrs));
+  const catList = [...byCat].filter(([, h]) => h > 0).sort((a, b) => b[1] - a[1]).map(([c, h]) => `<button class="dcrow" data-cat="${esc(c)}" style="--c:${c ? colorOf(c) : "var(--bad)"}" title="${esc(L("hlTitle"))}"><span>${esc(c || L("colNone"))}</span><b>${fmt(r2(h))}h</b></button>`).join("");
   return `<section class="panel day-card${off ? " off" : ""}${isToday ? " today-card" : ""}">
     <div class="tlhead"><span class="rl">${shortDay(D)}${isToday ? L("todaySuffix") : ""}</span>${right}</div>
     <div class="tltrack">${segs}${to > dayEnd ? `<span class="tlend" style="left:${pct(dayEnd)}" title="${minToT(dayEnd)}"></span>` : ""}${nowIn ? `<span class="tlfuture" style="left:${pct(nm)}"></span><span class="tlnow" style="left:${pct(nm)}"></span>` : ""}</div>
     <div class="tlaxis"><span>${minToT(from)}</span>${nowIn ? `<b style="left:clamp(70px,${pct(nm)},calc(100% - 70px))">${L("tlNow", minToT(nm))}</b>` : ""}<span>${minToT(to)}</span></div>
     ${status}
+    ${catList ? `<div class="dclist">${catList}</div>` : ""}
     <span class="rl small">${foot.join(" · ")}</span>
   </section>`;
 }
@@ -1185,7 +1204,7 @@ function dayCardHTML(){
 setInterval(() => {
   renderPgBar();
   if (view !== "log" || D !== today()) return;
-  const c = document.querySelector("#rail .day-card"); if (c) c.outerHTML = dayCardHTML();
+  const c = document.querySelector("#rail .day-card"); if (c){ c.outerHTML = dayCardHTML(); applyHL(); }
   renderWeek();
   const on = new Set(dayRows(D).filter(e => e._now).map(e => e.id));
   document.querySelectorAll("#days .entry").forEach(r => r.classList.toggle("active", on.has(r.dataset.id)));
@@ -1224,7 +1243,7 @@ function renderRail(){
       ${rows.some(e => e.category === LEAVE) ? (() => { const h = sumH(rows.filter(e => e.category === LEAVE));
         return `<div class="rtot sub"><span>${L("dayOffTotal")}</span><b>${L("dayOffVal", fmt(h), fmt(r2(h / (dayH() || 8))))}</b></div>`; })() : ""}
     </section>
-    ${none ? `<button class="railwarn" data-day="${firstNone.date}" title="${L("noneWarnTitle")}">${L("noneWarn", fmt(none))}</button>` : ""}` + countdown + notesCard() + todoCard();   // countdown, the day's notes, then the to-do list at the very bottom
+    ${none ? `<button class="railwarn" data-day="${firstNone.date}" title="${L("noneWarnTitle")}">${L("noneWarn", fmt(none))}</button>` : ""}` + countdown + notesCard() + todoCard(); applyHL();   // countdown, the day's notes, then the to-do list at the very bottom
 }
 
 function renderLog(){
@@ -2038,6 +2057,12 @@ function backup(){
   render();
 }
 $("#exportJson").onclick = backup;
+const hlCat = ev => { const r = ev.target.closest?.(".dcrow"); return r ? r.dataset.cat : null; };
+for (const [on, off] of [["mouseover", "mouseout"], ["focusin", "focusout"]]){
+  $("#rail").addEventListener(on, ev => { const c = hlCat(ev); if (c !== null && c !== HL_HOVER){ HL_HOVER = c; applyHL(); } });
+  $("#rail").addEventListener(off, ev => { if (hlCat(ev) !== null && !ev.relatedTarget?.closest?.(".dcrow")){ HL_HOVER = null; applyHL(); } });
+}
+$("#rail").addEventListener("click", ev => { const c = hlCat(ev); if (c === null) return; HL_PIN = HL_PIN === c ? null : c; applyHL(); });
 $("#otBtn").addEventListener("click", () => { S.otDay = S.otDay === today() ? "" : today(); save(); renderPgBar(); });
 $("#lunchBar").addEventListener("click", ev => {
   if (!ev.target.closest("[data-startbreak]")) return;
